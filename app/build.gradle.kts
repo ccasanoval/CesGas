@@ -2,16 +2,18 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt)
 }
 
 android {
     namespace = "com.cesoft.cesgas"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.cesoft.cesgas"
         minSdk = 30
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
@@ -40,7 +42,11 @@ android {
 }
 
 dependencies {
+    /// Modules
+    implementation(project(":data"))
+    implementation(project(":domain"))
 
+    /// Core
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -56,4 +62,19 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    // DI
+    implementation(libs.hilt.android)
+    implementation (libs.androidx.hilt.navigation.compose)
+    ksp(libs.hilt.android.compiler)
+
+    /// VMI
+    implementation(libs.mvi)
+    implementation(libs.mvi.compose)
+
+    /// Navigation
+    implementation(libs.androidx.navigation.compose)
+
+    /// MAPS
+    implementation(libs.osmdroid.android)
 }
