@@ -3,6 +3,8 @@ package com.cesoft.cesgas.ui.home.mvi
 import com.adidas.mvi.sideeffects.SideEffects
 import com.adidas.mvi.transform.SideEffectTransform
 import com.adidas.mvi.transform.ViewTransform
+import com.cesoft.domain.AppError
+import com.cesoft.domain.entity.Product
 import kotlinx.coroutines.flow.StateFlow
 
 
@@ -15,12 +17,11 @@ internal object HomeTransform {
     }
 
     data class GoInit(
-        val a: Int = 0
-        //val trackFlow: StateFlow<TrackDto?>,
-        //val error: AppError?,
+        val list: List<Product>,
+        val error: AppError?,
     ): ViewTransform<HomeState, HomeSideEffect>() {
         override fun mutate(currentState: HomeState): HomeState {
-            return HomeState.Init()
+            return HomeState.Init(list, error)
         }
     }
 

@@ -1,5 +1,6 @@
 [versions]
 agp = "8.7.2"
+datastorePreferences = "1.1.1"
 hilt = "2.52"
 hiltNavigationCompose = "1.2.0"
 kotlin = "2.0.21"
@@ -17,9 +18,12 @@ mvi = "1.8.2"
 mviCompose = "0.1.0"
 navigationCompose = "2.8.4"
 osmdroidAndroid = "6.1.20"
+retrofit = "2.11.0"
+loggingInterceptor = "5.0.0-alpha.11"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastorePreferences" }
 androidx-hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "hiltNavigationCompose" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -42,6 +46,9 @@ mvi-compose = { module = "com.adidas.mvi:mvi-compose", version.ref = "mviCompose
 osmdroid-android = { module = "org.osmdroid:osmdroid-android", version.ref = "osmdroidAndroid" }
 hilt-android-compiler = { group = "com.google.dagger", name = "hilt-android-compiler", version.ref = "hilt" }
 hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
+retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
+converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "retrofit" }
+logging-interceptor = { module = "com.squareup.okhttp3:logging-interceptor", version.ref = "loggingInterceptor" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

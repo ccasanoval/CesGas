@@ -39,6 +39,19 @@ android {
     buildFeatures {
         compose = true
     }
+
+    buildFeatures.buildConfig = true
+    flavorDimensions += "deploy"
+    productFlavors {
+        create("devel") {
+            dimension = "deploy"
+            //buildConfigField("String", "API_URL", "\"https://sedeaplicaciones.minetur.gob.es\"")
+        }
+        create("prod") {
+            dimension = "deploy"
+            //buildConfigField("String", "API_URL", "\"https://sedeaplicaciones.minetur.gob.es\"")
+        }
+    }
 }
 
 dependencies {

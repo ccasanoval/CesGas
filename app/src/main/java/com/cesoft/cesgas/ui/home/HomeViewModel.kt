@@ -12,6 +12,8 @@ import com.cesoft.cesgas.ui.home.mvi.HomeIntent
 import com.cesoft.cesgas.ui.home.mvi.HomeSideEffect
 import com.cesoft.cesgas.ui.home.mvi.HomeState
 import com.cesoft.cesgas.ui.home.mvi.HomeTransform
+import com.cesoft.domain.AppError
+import com.cesoft.domain.usecase.GetProductsUC
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -20,7 +22,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-
+    private val getProducts: GetProductsUC,
 ): ViewModel(), MviHost<HomeIntent, State<HomeState, HomeSideEffect>> {
 
     private val reducer = Reducer(
@@ -45,29 +47,14 @@ class HomeViewModel @Inject constructor(
     }
 
     private fun executeLoad() = flow {
-        /*
-        val currentTrack = readCurrentTrack().getOrNull() ?: TrackDto.Empty
-        if(currentTrack.isCreated) {
-            trackingServiceFac.start(currentTrack.minInterval, currentTrack.minDistance)
-        }
-
-        //https://stackoverflow.com/questions/78277363/collecting-flows-in-the-viewmodel
-        val res = readCurrentTrackFlow()
+        val res = getProducts()
         res.getOrNull()?.let {
-            val flow: StateFlow<TrackDto?> = it.stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5_000),
-                initialValue = TrackDto.Empty,
-            )
-            emit(HomeTransform.GoInit(flow, null))
+            emit(HomeTransform.GoInit(it, null))
         } ?: run {
             val e: AppError = res.exceptionOrNull()
                 ?.let { AppError.DataBaseError(it) } ?: run { AppError.NotFound }
-            val flow = MutableStateFlow<TrackDto?>(null)
-            emit(HomeTransform.GoInit(flow, e))
+            emit(HomeTransform.GoInit(listOf(), e))
         }
-        */
-        emit(HomeTransform.GoInit())
     }
 
     private fun executeStart() = flow {

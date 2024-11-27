@@ -1,13 +1,14 @@
 package com.cesoft.cesgas.ui.home.mvi
 
 import com.adidas.mvi.LoggableState
-import kotlinx.coroutines.flow.StateFlow
+import com.cesoft.domain.AppError
+import com.cesoft.domain.entity.Product
+import com.cesoft.domain.entity.Station
 
 sealed class HomeState: LoggableState {
     data object Loading: HomeState()
     data class Init(
-        val a: Int = 0
-        //val trackFlow: StateFlow<TrackDto?>,
-        //val error: AppError? = null
+        val list: List<Product>,
+        val error: AppError? = null
     ): HomeState()
 }
