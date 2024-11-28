@@ -1,13 +1,21 @@
 package com.cesoft.cesgas.ui.home
 
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.intl.Locale
 import androidx.navigation.NavController
 import com.adidas.mvi.compose.MviScreen
 import com.cesoft.cesgas.ui.common.LoadingCompo
+import com.cesoft.cesgas.ui.common.toMoneyFormat
 import com.cesoft.cesgas.ui.home.mvi.HomeIntent
 import com.cesoft.cesgas.ui.home.mvi.HomeState
+import com.cesoft.cesgas.ui.theme.SepMax
 import kotlin.reflect.KFunction1
 
 @Composable
@@ -46,35 +54,35 @@ private fun Init(
     state: HomeState.Init,
     reduce: KFunction1<HomeIntent, Unit>
 ) {
-    Header()
-    StationList()
+    Column {
+        Header()
+        StationList(state, reduce)
+    }
 }
 
 @Composable
 private fun Header() {
-    Text("Filtros para la busqueda")
+    Text("Filtros para la busqueda", modifier = Modifier.padding(SepMax))
 }
 
 @Composable
-private fun StationList() {
-    Text("Station list")
-// {"IDProducto":"1","NombreProducto":"Gasolina 95 E5","NombreProductoAbreviatura":"G95E5"},
-// {"IDProducto":"23","NombreProducto":"Gasolina 95 E10","NombreProductoAbreviatura":"G95E10"},
-// {"IDProducto":"20","NombreProducto":"Gasolina 95 E5 Premium","NombreProductoAbreviatura":"G95E5+"},
-// {"IDProducto":"3","NombreProducto":"Gasolina 98 E5","NombreProductoAbreviatura":"G98E5"},
-// {"IDProducto":"21","NombreProducto":"Gasolina 98 E10","NombreProductoAbreviatura":"G98E10"},
-// {"IDProducto":"4","NombreProducto":"Gasóleo A habitual","NombreProductoAbreviatura":"GOA"},
-// {"IDProducto":"5","NombreProducto":"Gasóleo Premium","NombreProductoAbreviatura":"GOA+"},
-// {"IDProducto":"6","NombreProducto":"Gasóleo B","NombreProductoAbreviatura":"GOB"},{"IDProducto":"7","NombreProducto":"Gasóleo C","NombreProductoAbreviatura":"GOC"},{"IDProducto":"16","NombreProducto":"Bioetanol","NombreProductoAbreviatura":"BIE"},{"IDProducto":"8","NombreProducto":"Biodiésel","NombreProductoAbreviatura":"BIO"},
-// {"IDProducto":"17","NombreProducto":"Gases licuados del petróleo","NombreProductoAbreviatura":"GLP"},
-// {"IDProducto":"18","NombreProducto":"Gas natural comprimido","NombreProductoAbreviatura":"GNC"},
-// {"IDProducto":"19","NombreProducto":"Gas natural licuado","NombreProductoAbreviatura":"GNL"},
-// {"IDProducto":"22","NombreProducto":"Hidrógeno","NombreProductoAbreviatura":"H2"},
-// {"IDProducto":"9","NombreProducto":"Fuelóleo bajo índice azufre","NombreProductoAbreviatura":"FOB"},
-// {"IDProducto":"10","NombreProducto":"Fuelóleo especial","NombreProductoAbreviatura":"FOE"},
-// {"IDProducto":"11","NombreProducto":"Gasóleo para uso marítimo","NombreProductoAbreviatura":"MGO"},
-// {"IDProducto":"12","NombreProducto":"Gasolina de aviación","NombreProductoAbreviatura":"GNAV"},
-// {"IDProducto":"13","NombreProducto":"Queroseno de aviación JET_A1","NombreProductoAbreviatura":"JETA1"},
-// {"IDProducto":"14","NombreProducto":"Queroseno de aviación JET_A2","NombreProductoAbreviatura":"JETA2"}]
+private fun StationList(
+    state: HomeState.Init,
+    reduce: (HomeIntent) -> Unit
+) {
+    Text("Station list", modifier = Modifier.padding(SepMax))
+
+    LazyColumn {
+        for (station in state.list) {
+            item {
+                Row {
+                    Text(station.prices.G95.toMoneyFormat(Locale.current.platformLocale), modifier = Modifier.weight(.2f))
+                    Text(station.title, modifier = Modifier.weight(.7f))
+                    val a: Float? = null
+                    Text(a.toMoneyFormat(Locale.current.platformLocale), modifier = Modifier.weight(.2f))
+                }
+            }
+        }
+    }
 
 }

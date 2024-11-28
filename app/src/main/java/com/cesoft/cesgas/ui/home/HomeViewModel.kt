@@ -13,6 +13,9 @@ import com.cesoft.cesgas.ui.home.mvi.HomeSideEffect
 import com.cesoft.cesgas.ui.home.mvi.HomeState
 import com.cesoft.cesgas.ui.home.mvi.HomeTransform
 import com.cesoft.domain.AppError
+import com.cesoft.domain.entity.Product
+import com.cesoft.domain.entity.ProductType
+import com.cesoft.domain.usecase.GetByCityUC
 import com.cesoft.domain.usecase.GetProductsUC
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
@@ -23,6 +26,7 @@ import javax.inject.Inject
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val getProducts: GetProductsUC,
+    private val getByCity: GetByCityUC,
 ): ViewModel(), MviHost<HomeIntent, State<HomeState, HomeSideEffect>> {
 
     private val reducer = Reducer(
@@ -47,12 +51,15 @@ class HomeViewModel @Inject constructor(
     }
 
     private fun executeLoad() = flow {
-        val res = getProducts()
+        android.util.Log.e("AAA", "----------- 000")
+        val res = getByCity(7183, ProductType.G95)//TODO:
         res.getOrNull()?.let {
+            android.util.Log.e("AAA", "----------- ${it.size}")
             emit(HomeTransform.GoInit(it, null))
         } ?: run {
             val e: AppError = res.exceptionOrNull()
                 ?.let { AppError.DataBaseError(it) } ?: run { AppError.NotFound }
+            android.util.Log.e("AAA", "----------- $e")
             emit(HomeTransform.GoInit(listOf(), e))
         }
     }

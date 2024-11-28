@@ -16,14 +16,6 @@ data class ProductDto(
     @SerializedName("NombreProductoAbreviatura")
     val acronym: String,
 ) {
-    //fun is95() = acronym.contains("95")
-    val isG95: Boolean
-        get() = acronym.contains("G95")
-    val isGOA: Boolean
-        get() = acronym == "GOA"
-    val isGOAP: Boolean
-        get() = acronym == "GOA+"
-
     fun toEntity() = Product(
         id = id,
         name = name,

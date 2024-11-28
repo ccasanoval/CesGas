@@ -2,7 +2,10 @@ package com.cesoft.data.remote
 
 import android.content.Context
 import com.cesoft.data.BuildConfig
+import com.cesoft.data.entity.ByCityDataDto
+import com.cesoft.data.entity.ByCityDto
 import com.cesoft.data.entity.ProductDto
+import com.cesoft.data.remote.result.NetworkResultCallAdapterFactory
 import com.google.gson.GsonBuilder
 import kotlinx.coroutines.runBlocking
 import okhttp3.Cache
@@ -18,11 +21,9 @@ class RemoteDataSource(
     private val context: Context,
     api: ApiService? = null,
 ) {
-    private val apiServiceNoAuth: ApiService//They broke something again, so login can not use auth...
     private val apiService: ApiService
 
     init {
-        apiServiceNoAuth = api ?: getRetrofit(API).create(ApiService::class.java)
         apiService = api ?: getRetrofit(API).create(ApiService::class.java)
         android.util.Log.e("RemoteDS", "API:--------------------------------------- $API")
     }
@@ -56,7 +57,7 @@ class RemoteDataSource(
         return Retrofit.Builder()
             .baseUrl(url)
             .addConverterFactory(GsonConverterFactory.create(gson))
-            //.addCallAdapterFactory(NetworkResultCallAdapterFactory.create())
+            .addCallAdapterFactory(NetworkResultCallAdapterFactory.create())
             .client(getHttpClient())
             .build()
     }
@@ -66,6 +67,11 @@ class RemoteDataSource(
         return apiService.getProducts()
     }
 
+    suspend fun getByCity(id: Int): Result<ByCityDto> {
+        return apiService.getByCity(id)
+    }
+
+    //----------------------------------------------------------------------------------------------
     companion object {
         const val API = BuildConfig.API_URL//"https://api.sergest.desarrollo.systems"
     }
