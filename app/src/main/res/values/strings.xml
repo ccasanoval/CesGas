@@ -1,3 +1,25 @@
 <resources>
     <string name="app_name">CesGas</string>
+
+    <string name="station_list">Estaciones de %s con %s</string>
+
+    <!-- Location -->
+    <string name="state">Autonomía</string>
+    <string name="province">Provincia</string>
+    <string name="county">Municipio</string>
+    <string name="city">Localidad</string>
+
+    <!-- Product -->
+    <string name="g95">Gasolina 95</string>
+    <string name="g98">Gasolina 98</string>
+    <string name="goa">Gasóleo A</string>
+    <string name="gob">Gasóleo B</string>
+    <string name="goc">Gasóleo C</string>
+    <string name="goap">Gasóleo Premium</string>
+    <string name="bie">Bioetanol</string>
+    <string name="bio">Biodiésel</string>
+    <string name="glp">GLP</string>
+    <string name="gnc">GNC</string>
+    <string name="gnl">GNL</string>
+    <string name="h2">Hidrógeno</string>
 </resources>

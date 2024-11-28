@@ -12,12 +12,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavController
 import com.adidas.mvi.compose.MviScreen
+import com.cesoft.cesgas.R
 import com.cesoft.cesgas.ui.common.LoadingCompo
 import com.cesoft.cesgas.ui.common.toMoneyFormat
 import com.cesoft.cesgas.ui.home.mvi.HomeIntent
@@ -25,6 +27,7 @@ import com.cesoft.cesgas.ui.home.mvi.HomeState
 import com.cesoft.cesgas.ui.theme.FontMin
 import com.cesoft.cesgas.ui.theme.SepMax
 import com.cesoft.cesgas.ui.theme.SepMed
+import com.cesoft.cesgas.ui.theme.SepMin
 import com.cesoft.domain.AppError
 import com.cesoft.domain.entity.Location
 import com.cesoft.domain.entity.Prices
@@ -75,7 +78,12 @@ private fun Init(
 @Composable
 private fun Header() {
     Text("Filtros para la busqueda", modifier = Modifier.padding(SepMax))
-    
+    Column {
+        Text(text = stringResource(R.string.state))
+        Text(text = stringResource(R.string.province))
+        Text(text = stringResource(R.string.county))
+        Text(text = stringResource(R.string.city))
+    }
 }
 
 @Composable
@@ -83,13 +91,15 @@ private fun StationList(
     state: HomeState.Init,
     reduce: (HomeIntent) -> Unit
 ) {
-    Text("Station list", modifier = Modifier.padding(SepMax))
-
+    Text(
+        text = stringResource(R.string.station_list, "Sagunto", "Gasolina 95"),
+        modifier = Modifier.padding(SepMax)
+    )
     LazyColumn {
         for (station in state.list) {
             item {
                 Item(
-                    modifier = Modifier.padding(horizontal = SepMed),
+                    modifier = Modifier.padding(horizontal = SepMed, vertical = SepMin),
                     station = station,
                     reduce = reduce
                 )
