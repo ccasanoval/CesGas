@@ -113,6 +113,7 @@ data class ByCityDataDto(
     val idState: String?,
 ) {
     fun toEntity() = Station(
+        id = idStation?.toInt() ?: 0,
         zipCode = zipCode ?: "",
         address = address ?: "",
         city = city ?: "",

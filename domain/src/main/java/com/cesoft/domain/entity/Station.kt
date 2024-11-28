@@ -1,6 +1,7 @@
 package com.cesoft.domain.entity
 
 data class Station(
+    val id: Int,
     val zipCode: String,
     val address: String,
     val city: String,
