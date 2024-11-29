@@ -3,6 +3,12 @@
 
     <string name="station_list">Estaciones de %s con %s</string>
 
+    <!-- Acctions -->
+    <string name="select">Selecciona</string>
+    <string name="apply">Aplicar</string>
+    <string name="back">Volver</string>
+    <string name="delete">Eliminar</string>
+
     <!-- Location -->
     <string name="state">Autonomía</string>
     <string name="province">Provincia</string>

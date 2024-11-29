@@ -10,6 +10,8 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -20,6 +22,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavController
 import com.adidas.mvi.compose.MviScreen
 import com.cesoft.cesgas.R
+import com.cesoft.cesgas.ui.common.FilterCompo
+import com.cesoft.cesgas.ui.common.FilterField
+import com.cesoft.cesgas.ui.common.Filters
 import com.cesoft.cesgas.ui.common.LoadingCompo
 import com.cesoft.cesgas.ui.common.toMoneyFormat
 import com.cesoft.cesgas.ui.home.mvi.HomeIntent
@@ -77,12 +82,25 @@ private fun Init(
 
 @Composable
 private fun Header() {
+    val isStateVisible = remember { mutableStateOf(false) }
+    val isProvinceVisible = remember { mutableStateOf(false) }
+    val isCountyVisible = remember { mutableStateOf(false) }
+    val isCityVisible = remember { mutableStateOf(false) }
     Text("Filtros para la busqueda", modifier = Modifier.padding(SepMax))
     Column {
-        Text(text = stringResource(R.string.state))
-        Text(text = stringResource(R.string.province))
-        Text(text = stringResource(R.string.county))
-        Text(text = stringResource(R.string.city))
+        val states = listOf(
+            FilterField(10, "State 1"),
+            FilterField(20, "State 2"),
+            FilterField(30, "State 3"),
+            FilterField(44, "State 4"),
+            FilterField(55, "State 5"),
+        )
+        FilterCompo(stringResource(R.string.state), isStateVisible, Filters(states)) {
+            android.util.Log.e("AA", "-------------- ${it.fields.size} / ${it.getSelected().fields.size}")
+        }
+        FilterCompo(stringResource(R.string.province), isProvinceVisible, Filters(listOf())) {}
+        FilterCompo(stringResource(R.string.county), isCountyVisible, Filters(listOf())) {}
+        FilterCompo(stringResource(R.string.city), isCityVisible, Filters(listOf())) {}
     }
 }
 
