@@ -114,7 +114,7 @@ private fun StationList(
         modifier = Modifier.padding(SepMax)
     )
     LazyColumn {
-        for (station in state.list) {
+        for (station in state.stations) {
             item {
                 Item(
                     modifier = Modifier.padding(horizontal = SepMed, vertical = SepMin),
@@ -161,7 +161,7 @@ private fun Item(
 @Composable
 private fun HomePage_Preview() {
     val state = HomeState.Init(
-        list = listOf(
+        stations = listOf(
             Station(69, "28001", "Paper 123",
                 "Sin City", "Capital County", "Bad bad state",
                 Location(40.2, -3.1), "9.00 a 18.00", "Estacion final",

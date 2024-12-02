@@ -2,12 +2,13 @@ package com.cesoft.data.remote
 
 import android.content.Context
 import com.cesoft.data.BuildConfig
-import com.cesoft.data.entity.ByCityDataDto
-import com.cesoft.data.entity.ByCityDto
+import com.cesoft.data.entity.CountyDto
 import com.cesoft.data.entity.ProductDto
+import com.cesoft.data.entity.ProvinceDto
+import com.cesoft.data.entity.StateDto
+import com.cesoft.data.entity.StationDto
 import com.cesoft.data.remote.result.NetworkResultCallAdapterFactory
 import com.google.gson.GsonBuilder
-import kotlinx.coroutines.runBlocking
 import okhttp3.Cache
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
@@ -66,9 +67,33 @@ class RemoteDataSource(
     suspend fun getProducts(): Result<List<ProductDto>> {
         return apiService.getProducts()
     }
+    suspend fun getStates(): Result<List<StateDto>> {
+        return apiService.getStates()
+    }
+    suspend fun getProvinces(id: Int): Result<List<ProvinceDto>> {
+        return apiService.getProvinceByState(id)
+    }
+    suspend fun getCounties(id: Int): Result<List<CountyDto>> {
+        return apiService.getCountyByProvince(id)
+    }
 
-    suspend fun getByCity(id: Int): Result<ByCityDto> {
-        return apiService.getByCity(id)
+    suspend fun getByState(id: Int): Result<StationDto> {
+        return apiService.getByState(id)
+    }
+    suspend fun getByState(id: Int, product: Int): Result<StationDto> {
+        return apiService.getByState(id, product)
+    }
+    suspend fun getByProvince(id: Int): Result<StationDto> {
+        return apiService.getByProvince(id)
+    }
+    suspend fun getByProvince(id: Int, product: Int): Result<StationDto> {
+        return apiService.getByProvince(id, product)
+    }
+    suspend fun getByCounty(id: Int): Result<StationDto> {
+        return apiService.getByCounty(id)
+    }
+    suspend fun getByCounty(id: Int, product: Int): Result<StationDto> {
+        return apiService.getByCounty(id, product)
     }
 
     //----------------------------------------------------------------------------------------------

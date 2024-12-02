@@ -18,11 +18,18 @@ internal object HomeTransform {
     }
 
     data class GoInit(
-        val list: List<Station>,
-        val error: AppError?,
+        val stations: List<Station> = listOf(),
+        val filter: Filter = Filter.Empty,
+        val masters: Masters = Masters.Empty,
+        val error: AppError? = null,
     ): ViewTransform<HomeState, HomeSideEffect>() {
         override fun mutate(currentState: HomeState): HomeState {
-            return HomeState.Init(list, error)
+            return HomeState.Init(
+                stations = stations,
+                masters = masters,
+                filter = filter,
+                error = error
+            )
         }
     }
 

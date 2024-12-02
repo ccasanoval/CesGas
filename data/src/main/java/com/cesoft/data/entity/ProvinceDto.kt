@@ -1,5 +1,6 @@
 package com.cesoft.data.entity
 
+import com.cesoft.domain.entity.AddressProvince
 import com.google.gson.annotations.SerializedName
 
 data class ProvinceDto(
@@ -8,4 +9,5 @@ data class ProvinceDto(
     @SerializedName("Provincia")
     val name: String,
 ) {
+    fun toEntity() = AddressProvince(id = id, name = name)
 }
