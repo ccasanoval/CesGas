@@ -4,9 +4,6 @@ import com.cesoft.domain.entity.Location
 import com.cesoft.domain.entity.Prices
 import com.cesoft.domain.entity.Station
 import com.google.gson.annotations.SerializedName
-import javax.microedition.khronos.opengles.GL
-import kotlin.math.max
-import kotlin.math.min
 
 /**
 {
@@ -54,11 +51,11 @@ import kotlin.math.min
 //
 //    }
 
-data class ByCityDto(
+data class StationDto(
     @SerializedName("ListaEESSPrecio")
-    val list: List<ByCityDataDto>
+    val list: List<StationDataDto>
 )
-data class ByCityDataDto(
+data class StationDataDto(
     @SerializedName("C.P.")
     val zipCode: String?,
     @SerializedName("Dirección")

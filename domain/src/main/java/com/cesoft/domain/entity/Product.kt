@@ -30,17 +30,21 @@ data class Product(
         get() = acronym == "GOC"
     val isGLP: Boolean
         get() = acronym == "GLP"
+    val isBIE: Boolean
+        get() = acronym == "BIE"
+    val isBIO: Boolean
+        get() = acronym == "BIO"
 
-    val simpleName: String
-        get() = if(isG95) "Gasolina 95"
-                else if(isG98) "Gasolina 98"
-                else if(isGOA) "Gasóleo A"
-                else if(isGOB) "Gasóleo B"
-                else if(isGOC) "Gasóleo C"
-                else if(isGOAP) "Gasóleo Premium"
-                else if(isGLP) "GLP"
-                //TODO: keep working...
-                else "Otros"
+//    val simpleName: String
+//        get() = if(isG95) "Gasolina 95"
+//                else if(isG98) "Gasolina 98"
+//                else if(isGOA) "Gasóleo A"
+//                else if(isGOB) "Gasóleo B"
+//                else if(isGOC) "Gasóleo C"
+//                else if(isGOAP) "Gasóleo Premium"
+//                else if(isGLP) "GLP"
+//                //TODO: keep working...
+//                else "Otros"
 }
 // {"IDProducto":"1","NombreProducto":"Gasolina 95 E5","NombreProductoAbreviatura":"G95E5"},
 // {"IDProducto":"23","NombreProducto":"Gasolina 95 E10","NombreProductoAbreviatura":"G95E10"},
