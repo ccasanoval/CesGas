@@ -3,15 +3,16 @@ package com.cesoft.domain.repository
 import com.cesoft.domain.entity.AddressCounty
 import com.cesoft.domain.entity.AddressProvince
 import com.cesoft.domain.entity.AddressState
+import com.cesoft.domain.entity.Filter
 import com.cesoft.domain.entity.Product
 import com.cesoft.domain.entity.ProductType
-import com.cesoft.domain.entity.Settings
 import com.cesoft.domain.entity.Station
 
 
 interface RepositoryContract {
     // PREFS
-    suspend fun readSettings(): Result<Settings>
+    suspend fun getFilter(): Result<Filter>
+    suspend fun setFilter(filter: Filter): Result<Unit>
 
     // REMOTE MASTERS
     suspend fun getProducts(): Result<List<Product>>
@@ -21,9 +22,9 @@ interface RepositoryContract {
 
     // REMOTE STATIONS
     suspend fun getByState(id: Int): Result<List<Station>>
-    suspend fun getByState(id: Int, product: Int): Result<List<Station>>
+    suspend fun getByState(id: Int, productType: ProductType): Result<List<Station>>
     suspend fun getByProvince(id: Int): Result<List<Station>>
-    suspend fun getByProvince(id: Int, product: Int): Result<List<Station>>
+    suspend fun getByProvince(id: Int, productType: ProductType): Result<List<Station>>
     suspend fun getByCounty(id: Int): Result<List<Station>>
-    suspend fun getByCounty(id: Int, product: Int): Result<List<Station>>
+    suspend fun getByCounty(id: Int, productType: ProductType): Result<List<Station>>
 }

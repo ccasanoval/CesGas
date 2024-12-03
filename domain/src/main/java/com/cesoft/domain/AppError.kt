@@ -1,12 +1,17 @@
 package com.cesoft.domain
 
 sealed class AppError: Throwable() {
-    data class UnknownError(override val message: String): AppError()
 
-    data object InternalException: AppError() {
-        private fun readResolve(): Any = InternalException
+    data object NoStateSelected: AppError() {
+        private fun readResolve(): Any = NoStateSelected
     }
-    data class NetworkException(val code: Int = 0, val msg: String =""): AppError()
+
+    data object UnknownError: AppError() {
+        private fun readResolve(): Any = UnknownError
+    }
+
+    data class InternalError(val code: Int = 0, val msg: String = ""): AppError()
+    data class NetworkException(val code: Int = 0, val msg: String = ""): AppError()
 
     data object NotFound: AppError() {
         private fun readResolve(): Any = NotFound

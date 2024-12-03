@@ -3,10 +3,8 @@ package com.cesoft.cesgas.ui.home.mvi
 import com.adidas.mvi.sideeffects.SideEffects
 import com.adidas.mvi.transform.SideEffectTransform
 import com.adidas.mvi.transform.ViewTransform
-import com.cesoft.domain.AppError
-import com.cesoft.domain.entity.Product
+import com.cesoft.domain.entity.Filter
 import com.cesoft.domain.entity.Station
-import kotlinx.coroutines.flow.StateFlow
 
 
 internal object HomeTransform {
@@ -21,7 +19,7 @@ internal object HomeTransform {
         val stations: List<Station> = listOf(),
         val filter: Filter = Filter.Empty,
         val masters: Masters = Masters.Empty,
-        val error: AppError? = null,
+        val error: Throwable? = null,
     ): ViewTransform<HomeState, HomeSideEffect>() {
         override fun mutate(currentState: HomeState): HomeState {
             return HomeState.Init(

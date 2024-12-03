@@ -1,6 +1,7 @@
 package com.cesoft.cesgas
 
 import android.content.Context
+import com.cesoft.cesgas.ui.Util
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -16,6 +17,10 @@ object AppModule {
     @Singleton
     @Provides
     fun provideApp(@ApplicationContext appContext: Context) = appContext
+
+    @Singleton
+    @Provides
+    fun provideUtil(@ApplicationContext appContext: Context) = Util(appContext)
 
 //    @OptIn(DelicateCoroutinesApi::class)
 //    @Singleton

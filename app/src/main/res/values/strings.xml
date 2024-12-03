@@ -1,13 +1,22 @@
 <resources>
     <string name="app_name">CesGas</string>
 
+    <!-- Messages -->
     <string name="station_list">Estaciones de %s con %s</string>
 
-    <!-- Acctions -->
+    <!-- Errors -->
+    <string name="error_no_state_selected">Seleccione una comunidad en el filtro</string>
+    <string name="error_unknown">Error desconocido</string>
+    <string name="error_not_found">No hay datos</string>
+
+    <!-- Actions -->
     <string name="select">Selecciona</string>
     <string name="apply">Aplicar</string>
     <string name="back">Volver</string>
+    <string name="close">Cerrar</string>
     <string name="delete">Eliminar</string>
+    <string name="show_filter">Ver filtro</string>
+    <string name="hide_filter">Cerrar filtro</string>
 
     <!-- Location -->
     <string name="state">Autonomía</string>
@@ -16,6 +25,7 @@
     <string name="city">Localidad</string>
 
     <!-- Product -->
+    <string name="product">Producto</string>
     <string name="g95">Gasolina 95</string>
     <string name="g98">Gasolina 98</string>
     <string name="goa">Gasóleo A</string>

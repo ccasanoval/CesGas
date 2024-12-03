@@ -1,37 +1,36 @@
 package com.cesoft.data.prefs
 
 import android.content.Context
-import com.cesoft.domain.entity.Settings
+import com.cesoft.domain.entity.Filter
+import com.cesoft.domain.entity.ProductType
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.lang.reflect.Type
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 
 class PrefDataSource(
     private val context: Context
 ) {
-    suspend fun saveSettings(settings: Settings) {
+    suspend fun setFilter(filter: Filter) {
         withContext(Dispatchers.IO) {
-            context.writeInt(PREFS_ID_CITY, settings.idCity)
-            context.writeInt(PREFS_ID_PROVINCE, settings.idProvince)
-            context.writeInt(PREFS_ID_STATE, settings.idState)
-            context.writeInt(PREFS_ID_PRODUCT, settings.idProduct)
+            context.writeInt(PREFS_ID_COUNTY, filter.county ?: -1)
+            context.writeInt(PREFS_ID_PROVINCE, filter.province ?: -1)
+            context.writeInt(PREFS_ID_STATE, filter.state ?: -1)
+            context.writeInt(PREFS_ID_PRODUCT, filter.productType?.ordinal ?: -1)
         }
     }
-    suspend fun readSettings(): Settings {
+    suspend fun getFilter(): Filter {
         return withContext(Dispatchers.IO) {
-            val idCity = context.readInt(PREFS_ID_CITY) ?: 0
-            val idProvince = context.readInt(PREFS_ID_PROVINCE) ?: 0
-            val idState = context.readInt(PREFS_ID_STATE) ?: 0
-            val idProduct = context.readInt(PREFS_ID_PRODUCT) ?: 0
-            return@withContext Settings(
-                idProduct = idProduct,
-                idState = idState,
-                idProvince = idProvince,
-                idCity = idCity
+            val county = context.readInt(PREFS_ID_COUNTY) ?: -1
+            val province = context.readInt(PREFS_ID_PROVINCE) ?: -1
+            val state = context.readInt(PREFS_ID_STATE) ?: -1
+            val product = context.readInt(PREFS_ID_PRODUCT) ?: -1
+            return@withContext Filter(
+                productType = if(product > -1) ProductType.entries[product] else null,
+                state = if(state > -1) state else null,
+                province = if(province > -1) province else null,
+                county = if(county > -1) county else null
             )
         }
     }
@@ -51,7 +50,7 @@ class PrefDataSource(
     //----------------------------------------------------------------------------------------------
     // Constants
     companion object {
-        private const val PREFS_ID_CITY = "PREFS_ID_CITY"
+        private const val PREFS_ID_COUNTY = "PREFS_ID_COUNTY"
         private const val PREFS_ID_PROVINCE = "PREFS_ID_PROVINCE"
         private const val PREFS_ID_STATE = "PREFS_ID_STATE"
         private const val PREFS_ID_PRODUCT = "PREFS_ID_PRODUCT"

@@ -1,34 +1,50 @@
 package com.cesoft.cesgas.ui.home
 
+import android.graphics.drawable.Icon
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.intl.Locale
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.adidas.mvi.compose.MviScreen
 import com.cesoft.cesgas.R
+import com.cesoft.cesgas.ui.Util
 import com.cesoft.cesgas.ui.common.FilterCompo
 import com.cesoft.cesgas.ui.common.FilterField
-import com.cesoft.cesgas.ui.common.Filters
+import com.cesoft.cesgas.ui.common.FilterOptions
 import com.cesoft.cesgas.ui.common.LoadingCompo
 import com.cesoft.cesgas.ui.common.toMoneyFormat
 import com.cesoft.cesgas.ui.home.mvi.HomeIntent
 import com.cesoft.cesgas.ui.home.mvi.HomeState
+import com.cesoft.cesgas.ui.message
 import com.cesoft.cesgas.ui.theme.FontMin
 import com.cesoft.cesgas.ui.theme.SepMax
 import com.cesoft.cesgas.ui.theme.SepMed
@@ -36,6 +52,7 @@ import com.cesoft.cesgas.ui.theme.SepMin
 import com.cesoft.domain.AppError
 import com.cesoft.domain.entity.Location
 import com.cesoft.domain.entity.Prices
+import com.cesoft.domain.entity.ProductType
 import com.cesoft.domain.entity.Station
 
 @Composable
@@ -74,33 +91,119 @@ private fun Init(
     state: HomeState.Init,
     reduce: (HomeIntent) -> Unit
 ) {
+    android.util.Log.e("AAA", "Init------------------- prod ${state.masters.products.size}")
+    android.util.Log.e("AAA", "Init------------------- stat ${state.masters.states.size}")
+    android.util.Log.e("AAA", "Init------------------- prov ${state.masters.provinces.size}")
+    android.util.Log.e("AAA", "Init------------------- coun ${state.masters.counties.size}")
     Column {
-        Header()
+        Header(state, reduce)
         StationList(state, reduce)
     }
 }
 
 @Composable
-private fun Header() {
-    val isStateVisible = remember { mutableStateOf(false) }
-    val isProvinceVisible = remember { mutableStateOf(false) }
-    val isCountyVisible = remember { mutableStateOf(false) }
-    val isCityVisible = remember { mutableStateOf(false) }
-    Text("Filtros para la busqueda", modifier = Modifier.padding(SepMax))
-    Column {
-        val states = listOf(
-            FilterField(10, "State 1"),
-            FilterField(20, "State 2"),
-            FilterField(30, "State 3"),
-            FilterField(44, "State 4"),
-            FilterField(55, "State 5"),
-        )
-        FilterCompo(stringResource(R.string.state), isStateVisible, Filters(states)) {
-            android.util.Log.e("AA", "-------------- ${it.fields.size} / ${it.getSelected().fields.size}")
+private fun Header(
+    state: HomeState.Init,
+    reduce: (HomeIntent) -> Unit
+) {
+    var isErrorVisible by remember { mutableStateOf(true) }
+    LaunchedEffect(state.error) { isErrorVisible = true }
+    if(state.error != null && isErrorVisible) {
+        Row(
+            modifier = Modifier
+                .background(MaterialTheme.colorScheme.inverseSurface)
+                .fillMaxWidth()
+        ) {
+            Text(
+                text = state.error.message(LocalContext.current),
+                color = MaterialTheme.colorScheme.inversePrimary,
+                modifier = Modifier.padding(SepMax).weight(.5f)
+            )
+            IconButton(onClick = { isErrorVisible = false }) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = stringResource(R.string.close),
+                    tint = MaterialTheme.colorScheme.inversePrimary
+                )
+            }
         }
-        FilterCompo(stringResource(R.string.province), isProvinceVisible, Filters(listOf())) {}
-        FilterCompo(stringResource(R.string.county), isCountyVisible, Filters(listOf())) {}
-        FilterCompo(stringResource(R.string.city), isCityVisible, Filters(listOf())) {}
+    }
+
+    var isVisible by remember { mutableStateOf(false) }
+    Button(onClick = { isVisible = !isVisible }, modifier = Modifier.padding(SepMed)) {
+        Text(text = stringResource(if(isVisible) R.string.hide_filter else R.string.show_filter))
+    }
+    if(isVisible) {
+        val isStateVisible = remember { mutableStateOf(false) }
+        val isProvinceVisible = remember { mutableStateOf(false) }
+        val isCountyVisible = remember { mutableStateOf(false) }
+        val isCityVisible = remember { mutableStateOf(false) }
+
+        val products = mutableListOf<FilterField>()
+        for(pt in state.masters.products) {
+            val selected = pt == state.filter.productType
+            val favorite = pt == ProductType.G95//TODO: Delete when prefs in use
+            products.add(FilterField(pt.ordinal, pt.name, selected, favorite))
+        }
+        val states = mutableListOf<FilterField>()
+        for(s in state.masters.states) {
+            val selected = s.id == state.filter.state
+            val favorite = s.id == 13 || s.id == 10//TODO: Delete when prefs in use
+            states.add(FilterField(s.id, s.name, selected, favorite))
+        }
+        val provinces = mutableListOf<FilterField>()
+        for(p in state.masters.provinces) {
+            val selected = p.id == state.filter.province
+            val favorite = p.id == 28 || p.id == 46//TODO: Delete when prefs in use
+            provinces.add(FilterField(p.id, p.name, selected, favorite))
+        }
+        val counties = mutableListOf<FilterField>()
+        for(c in state.masters.counties) {
+            val selected = c.id == state.filter.province
+            val favorite = c.id == 4418 || c.id == 4326 || c.id == 4402 || c.id == 4354 || c.id == 7183//TODO: Delete when prefs in use
+            provinces.add(FilterField(c.id, c.name, selected, favorite))
+        }
+        Column {
+            /// PRODUCT FILTER
+            FilterCompo(
+                stringResource(R.string.product),
+                isCityVisible,
+                FilterOptions(products),
+                unique = true
+            ) {
+                reduce(HomeIntent.ChangeProduct(it))
+            }
+            /// STATE FILTER
+            FilterCompo(
+                stringResource(R.string.state),
+                isStateVisible,
+                FilterOptions(states), unique = true
+            ) {
+                reduce(HomeIntent.ChangeAddressState(it))
+            }
+            if(state.filter.state != null) {
+                /// PROVINCE FILTER
+                FilterCompo(
+                    stringResource(R.string.province),
+                    isProvinceVisible,
+                    FilterOptions(provinces),
+                    unique = true
+                ) {
+                    reduce(HomeIntent.ChangeAddressProvince(it))
+                }
+                if(state.filter.province != null) {
+                    /// COUNTY FILTER
+                    FilterCompo(
+                        stringResource(R.string.county),
+                        isCountyVisible,
+                        FilterOptions(counties),
+                        unique = true
+                    ) {
+                        reduce(HomeIntent.ChangeAddressCounty(it))
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -109,10 +212,6 @@ private fun StationList(
     state: HomeState.Init,
     reduce: (HomeIntent) -> Unit
 ) {
-    Text(
-        text = stringResource(R.string.station_list, "Sagunto", "Gasolina 95"),
-        modifier = Modifier.padding(SepMax)
-    )
     LazyColumn {
         for (station in state.stations) {
             item {
@@ -137,19 +236,19 @@ private fun Item(
             Text(
                 text = station.prices.G95.toMoneyFormat(Locale.current.platformLocale),
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.weight(.15f),
+                modifier = Modifier.weight(.2f),
             )
             Text(
                 text = station.title,
                 modifier = Modifier.weight(.8f),
             )
+            IconButton(onClick = { reduce(HomeIntent.Load) }) { }
         }
         Row {
-            Box(modifier = Modifier.weight(.15f))
             Text(
                 text = "${station.county}, ${station.city} (${station.zipCode}), ${station.address}",
                 fontSize = FontMin,
-                modifier = Modifier.weight(.8f),
+                modifier = Modifier.padding(vertical = SepMed),
             )
         }
         HorizontalDivider()
