@@ -77,16 +77,16 @@ class RemoteDataSource(
         return apiService.getCountyByProvince(id)
     }
 
-    suspend fun getByState(id: Int): Result<StationDto> {
+    suspend fun getByState(id: String): Result<StationDto> {
         return apiService.getByState(id)
     }
-    suspend fun getByState(id: Int, product: Int): Result<StationDto> {
+    suspend fun getByState(id: String, product: Int): Result<StationDto> {
         return apiService.getByState(id, product)
     }
-    suspend fun getByProvince(id: Int): Result<StationDto> {
+    suspend fun getByProvince(id: String): Result<StationDto> {
         return apiService.getByProvince(id)
     }
-    suspend fun getByProvince(id: Int, product: Int): Result<StationDto> {
+    suspend fun getByProvince(id: String, product: Int): Result<StationDto> {
         return apiService.getByProvince(id, product)
     }
     suspend fun getByCounty(id: Int): Result<StationDto> {

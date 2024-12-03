@@ -60,18 +60,22 @@ class HomeViewModel @Inject constructor(
     }
 
     private fun executeLoad() = flow {
-        android.util.Log.e("AAA", "----------- 000")
-        //TODO: los muy anormales: id = "1" != "01"
+        val states = getStates().getOrNull() ?: listOf()
+        val products = getProducts().getOrNull() ?: listOf()
+        val masters = Masters.Empty.copy(states = states, products = products)
+
         //TODO: Orden
+        //TODO: Read prefs to check which state, province, county and product by default
         //val res = getByCounty(7183)
         //val res = getByProvince(13)
         val res = getByProvince(28)
+
         res.getOrNull()?.let {
             android.util.Log.e("AAA", "----------- ${it.size}")
             emit(HomeTransform.GoInit(
                 stations = it,
                 filter = Filter.Empty,
-                masters = Masters.Empty,
+                masters = masters,
                 error = null
             ))
         } ?: run {

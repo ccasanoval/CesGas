@@ -59,39 +59,59 @@ class Repository(
         }
     }
 
+    private fun orderByType(productType: ProductType, data: List<Station>): List<Station> {
+        return when(productType) {
+            ProductType.G95 -> data.sortedBy { it.prices.G95 }
+            ProductType.G98 -> data.sortedBy { it.prices.G98 }
+            ProductType.GOA -> data.sortedBy { it.prices.GOA }
+            ProductType.GOB -> data.sortedBy { it.prices.GOB }
+            ProductType.GOC -> data.sortedBy { it.prices.GOC }
+            ProductType.GOAP -> data.sortedBy { it.prices.GOAP }
+            ProductType.GLP -> data.sortedBy { it.prices.GLP }
+            ProductType.UNKNOWN -> data.sortedBy { it.prices.G95 }
+            ProductType.ALL -> data.sortedBy { it.prices.G95 }
+        }
+    }
+    private fun filterByType(productType: ProductType, data: List<Station>): List<Station> {
+        return when(productType) {
+            ProductType.ALL -> data
+            ProductType.G95 -> data.filter { it.prices.G95 != null }.sortedBy { it.prices.G95 }
+            ProductType.G98 -> data.filter { it.prices.G98 != null }.sortedBy { it.prices.G98 }
+            ProductType.GOA -> data.filter { it.prices.GOA != null }.sortedBy { it.prices.GOA }
+            ProductType.GOB -> data.filter { it.prices.GOB != null }.sortedBy { it.prices.GOB }
+            ProductType.GOC -> data.filter { it.prices.GOC != null }.sortedBy { it.prices.GOC }
+            ProductType.GOAP -> data.filter { it.prices.GOAP != null }.sortedBy { it.prices.GOAP }
+            ProductType.GLP -> data.filter { it.prices.GLP != null }.sortedBy { it.prices.GLP }
+            else -> data
+        }
+    }
+
     /// REMOTE STATIONS
     override suspend fun getByState(id: Int): Result<List<Station>> {
-        val res = remote.getByState(id)
+        val ids = if(id < 10) "0$id" else "$id"//Los muy anormales: id = "1" != "01"
+        val res = remote.getByState(ids)
         return if (res.isSuccess) {
             val data = res.getOrNull()?.list?.map { it.toEntity() } ?: listOf()
-//            val filtered = when(type) {
-//                ProductType.ALL -> data
-//                ProductType.G95 -> data.filter { it.prices.G95 != null }.sortedBy { it.prices.G95 }
-//                ProductType.G98 -> data.filter { it.prices.G98 != null }.sortedBy { it.prices.G98 }
-//                ProductType.GOA -> data.filter { it.prices.GOA != null }.sortedBy { it.prices.GOA }
-//                ProductType.GOB -> data.filter { it.prices.GOB != null }.sortedBy { it.prices.GOB }
-//                ProductType.GOC -> data.filter { it.prices.GOC != null }.sortedBy { it.prices.GOC }
-//                ProductType.GOAP -> data.filter { it.prices.GOAP != null }.sortedBy { it.prices.GOAP }
-//                ProductType.GLP -> data.filter { it.prices.GLP != null }.sortedBy { it.prices.GLP }
-//                else -> data
-//            }
             Result.success(data)
         } else {
             Result.failure(res.exceptionOrNull() ?: AppError.UnknownError(""))
         }
     }
-    override suspend fun getByState(id: Int, product: Int): Result<List<Station>> {
-        val res = remote.getByState(id, product)
+    override suspend fun getByState(id: Int, product: Int, productType: ProductType): Result<List<Station>> {
+        val ids = if(id < 10) "0$id" else "$id"//Los muy anormales: id = "1" != "01"
+        val res = remote.getByState(ids, product)
         return if (res.isSuccess) {
             val data = res.getOrNull()?.list?.map { it.toEntity() } ?: listOf()
-            Result.success(data)
+            val filtered = filterByType(productType, data)
+            Result.success(filtered)
         } else {
             Result.failure(res.exceptionOrNull() ?: AppError.UnknownError(""))
         }
     }
 
     override suspend fun getByProvince(id: Int): Result<List<Station>> {
-        val res = remote.getByProvince(id)
+        val ids = if(id < 10) "0$id" else "$id"//Los muy anormales: id = "1" != "01"
+        val res = remote.getByProvince(ids)
         return if (res.isSuccess) {
             val data = res.getOrNull()?.list?.map { it.toEntity() } ?: listOf()
             Result.success(data)
@@ -99,11 +119,13 @@ class Repository(
             Result.failure(res.exceptionOrNull() ?: AppError.UnknownError(""))
         }
     }
-    override suspend fun getByProvince(id: Int, product: Int): Result<List<Station>> {
-        val res = remote.getByProvince(id, product)
+    override suspend fun getByProvince(id: Int, product: Int, productType: ProductType): Result<List<Station>> {
+        val ids = if(id < 10) "0$id" else "$id"//Los muy anormales: id = "1" != "01"
+        val res = remote.getByProvince(ids, product)
         return if (res.isSuccess) {
             val data = res.getOrNull()?.list?.map { it.toEntity() } ?: listOf()
-            Result.success(data)
+            val filtered = filterByType(productType, data)
+            Result.success(filtered)
         } else {
             Result.failure(res.exceptionOrNull() ?: AppError.UnknownError(""))
         }
@@ -118,11 +140,12 @@ class Repository(
             Result.failure(res.exceptionOrNull() ?: AppError.UnknownError(""))
         }
     }
-    override suspend fun getByCounty(id: Int, product: Int): Result<List<Station>> {
+    override suspend fun getByCounty(id: Int, product: Int, productType: ProductType): Result<List<Station>> {
         val res = remote.getByCounty(id, product)
         return if (res.isSuccess) {
             val data = res.getOrNull()?.list?.map { it.toEntity() } ?: listOf()
-            Result.success(data)
+            val filtered = filterByType(productType, data)
+            Result.success(filtered)
         } else {
             Result.failure(res.exceptionOrNull() ?: AppError.UnknownError(""))
         }

@@ -8,6 +8,8 @@
     <string name="apply">Aplicar</string>
     <string name="back">Volver</string>
     <string name="delete">Eliminar</string>
+    <string name="show_filter">Ver filtro</string>
+    <string name="hide_filter">Cerrar filtro</string>
 
     <!-- Location -->
     <string name="state">Autonomía</string>

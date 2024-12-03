@@ -21,9 +21,9 @@ interface RepositoryContract {
 
     // REMOTE STATIONS
     suspend fun getByState(id: Int): Result<List<Station>>
-    suspend fun getByState(id: Int, product: Int): Result<List<Station>>
+    suspend fun getByState(id: Int, product: Int, productType: ProductType): Result<List<Station>>
     suspend fun getByProvince(id: Int): Result<List<Station>>
-    suspend fun getByProvince(id: Int, product: Int): Result<List<Station>>
+    suspend fun getByProvince(id: Int, product: Int, productType: ProductType): Result<List<Station>>
     suspend fun getByCounty(id: Int): Result<List<Station>>
-    suspend fun getByCounty(id: Int, product: Int): Result<List<Station>>
+    suspend fun getByCounty(id: Int, product: Int, productType: ProductType): Result<List<Station>>
 }

@@ -1,5 +1,6 @@
 package com.cesoft.cesgas.ui.home
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -7,11 +8,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -26,6 +30,9 @@ import com.cesoft.cesgas.ui.common.FilterCompo
 import com.cesoft.cesgas.ui.common.FilterField
 import com.cesoft.cesgas.ui.common.Filters
 import com.cesoft.cesgas.ui.common.LoadingCompo
+import com.cesoft.cesgas.ui.common.UniqueFilter
+import com.cesoft.cesgas.ui.common.UniqueFilterCompo
+import com.cesoft.cesgas.ui.common.UniqueFilterField
 import com.cesoft.cesgas.ui.common.toMoneyFormat
 import com.cesoft.cesgas.ui.home.mvi.HomeIntent
 import com.cesoft.cesgas.ui.home.mvi.HomeState
@@ -75,32 +82,51 @@ private fun Init(
     reduce: (HomeIntent) -> Unit
 ) {
     Column {
-        Header()
+        Header(state, reduce)
         StationList(state, reduce)
     }
 }
 
 @Composable
-private fun Header() {
-    val isStateVisible = remember { mutableStateOf(false) }
-    val isProvinceVisible = remember { mutableStateOf(false) }
-    val isCountyVisible = remember { mutableStateOf(false) }
-    val isCityVisible = remember { mutableStateOf(false) }
-    Text("Filtros para la busqueda", modifier = Modifier.padding(SepMax))
-    Column {
-        val states = listOf(
-            FilterField(10, "State 1"),
-            FilterField(20, "State 2"),
-            FilterField(30, "State 3"),
-            FilterField(44, "State 4"),
-            FilterField(55, "State 5"),
-        )
-        FilterCompo(stringResource(R.string.state), isStateVisible, Filters(states)) {
-            android.util.Log.e("AA", "-------------- ${it.fields.size} / ${it.getSelected().fields.size}")
+private fun Header(
+    state: HomeState.Init,
+    reduce: (HomeIntent) -> Unit
+) {
+    var isVisible by remember { mutableStateOf(false) }
+    Text(
+        text =
+            if(isVisible) stringResource(R.string.hide_filter)
+            else stringResource(R.string.show_filter),
+        color = MaterialTheme.colorScheme.outline,
+        modifier = Modifier
+            .padding(SepMax)
+            .clickable { isVisible = !isVisible }
+    )
+    if(isVisible) {
+        val isStateVisible = remember { mutableStateOf(false) }
+        val isProvinceVisible = remember { mutableStateOf(false) }
+        val isCountyVisible = remember { mutableStateOf(false) }
+        val isCityVisible = remember { mutableStateOf(false) }
+
+        val states = mutableListOf<UniqueFilterField>()
+        for(s in state.masters.states) {
+            states.add(UniqueFilterField(s.id, s.name, s.id == state.filter.state))
         }
-        FilterCompo(stringResource(R.string.province), isProvinceVisible, Filters(listOf())) {}
-        FilterCompo(stringResource(R.string.county), isCountyVisible, Filters(listOf())) {}
-        FilterCompo(stringResource(R.string.city), isCityVisible, Filters(listOf())) {}
+        Column {
+//            val states = listOf(
+//                UniqueFilterField(10, "State 1", true),
+//                UniqueFilterField(20, "State 2"),
+//                UniqueFilterField(30, "State 3", true),
+//                UniqueFilterField(44, "State 4"),
+//                UniqueFilterField(55, "State 5"),
+//            )
+            UniqueFilterCompo(stringResource(R.string.state), isStateVisible, UniqueFilter(states)) {
+                android.util.Log.e("AA", "---------- ${it.fields.size} / ${it.getSelected().fields.size}")
+            }
+            UniqueFilterCompo(stringResource(R.string.province), isProvinceVisible, UniqueFilter(listOf())) {}
+            UniqueFilterCompo(stringResource(R.string.county), isCountyVisible, UniqueFilter(listOf())) {}
+            UniqueFilterCompo(stringResource(R.string.city), isCityVisible, UniqueFilter(listOf())) {}
+        }
     }
 }
 
