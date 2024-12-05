@@ -29,10 +29,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Alignment.Companion.Center
 import androidx.compose.ui.Alignment.Companion.CenterVertically
-import androidx.compose.ui.Alignment.Companion.End
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
@@ -122,7 +119,7 @@ fun FilterCompo(
     else {
         LazyRow(modifier = Modifier.fillMaxWidth()) {
             item {
-                AddItemButton(title) { isVisible.value = true }
+                AddItemButton(title, Modifier.width(150.dp)) { isVisible.value = true }
             }
             for(field in remFilter.value.getSelected().fields) {
                 item {
@@ -258,13 +255,14 @@ private fun Item(
 @Composable
 private fun AddItemButton(
     title: String,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
     OutlinedButton(
         contentPadding = PaddingValues(SepMax, 0.dp),
         shape = CylinderShape,
         onClick = onClick,
-        modifier = Modifier.padding(horizontal = SepMin),
+        modifier = modifier.padding(horizontal = SepMin),
         content = { Text(title) }
     )
 }

@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -231,28 +232,32 @@ private fun Item(
     station: Station,
     reduce: (HomeIntent) -> Unit,
 ) {
-    Column(modifier = modifier) {
-        Row {
-            Text(
-                text = station.prices.G95.toMoneyFormat(Locale.current.platformLocale),
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.weight(.2f),
-            )
-            Text(
-                text = station.title,
-                modifier = Modifier.weight(.8f),
-            )
-            IconButton(onClick = { reduce(HomeIntent.Load) }) { }
+    Row(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = modifier.weight(.1f)) {
+            Row {
+                Text(
+                    text = station.prices.G95.toMoneyFormat(Locale.current.platformLocale),
+                    fontWeight = FontWeight.Bold,
+                )
+                Text(
+                    text = station.title,
+                    modifier = Modifier.padding(horizontal = SepMed)
+                )
+            }
+            Row {
+                Text(
+                    text = "${station.county}, ${station.city} (${station.zipCode}), ${station.address}",
+                    fontSize = FontMin,
+                    modifier = Modifier.padding(vertical = SepMed),
+                )
+            }
         }
-        Row {
-            Text(
-                text = "${station.county}, ${station.city} (${station.zipCode}), ${station.address}",
-                fontSize = FontMin,
-                modifier = Modifier.padding(vertical = SepMed),
-            )
+        // Map Icon
+        IconButton(onClick = { reduce(HomeIntent.Load) }) {
+            Icon(Icons.Default.Place, null)
         }
-        HorizontalDivider()
     }
+    HorizontalDivider()
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -274,7 +279,7 @@ private fun HomePage_Preview() {
             Station(71, "28003", "Paper 123",
                 "Freetown", "Capital County", "Bad bad state",
                 Location(40.4, -3.15), "9.00 a 18.00", "Mark IV",
-                Prices(1.593f, 1.79f, 1.40f, 1.35f, 1.25f, null, null)
+                Prices(1.590f, 1.79f, 1.40f, 1.35f, 1.25f, null, null)
             ),
         ),
         error = AppError.NotFound,

@@ -43,7 +43,7 @@ class HomeViewModel @Inject constructor(
     //private val getFavorites: GetFavoritesUC,
     //private val setFavorites: SetFavoritesUC,
 
-    private val getProducts: GetProductsUC,
+    //private val getProducts: GetProductsUC,
     private val getStates: GetStatesUC,
     private val getProvinces: GetProvincesUC,
     private val getCounties: GetCountiesUC,
@@ -85,65 +85,35 @@ class HomeViewModel @Inject constructor(
         emit(HomeTransform.AddSideEffect(HomeSideEffect.Close))
     }
 
-    private fun executeChangeProvince(filters: FilterOptions) = flow {
-        emit(HomeTransform.AddSideEffect(HomeSideEffect.Close))
+    private fun executeChangeProvince(options: FilterOptions) = flow {
+        android.util.Log.e(TAG, "executeChangeProvince------------------- ${options}")
+        val idProvince = options.getSelectedId()
+        filter = filter.copy(province = idProvince, county = null)
+        emit(fetch())
     }
-    private fun executeChangeCounty(filters: FilterOptions) = flow {
-        emit(HomeTransform.AddSideEffect(HomeSideEffect.Close))
+    private fun executeChangeCounty(options: FilterOptions) = flow {
+        android.util.Log.e(TAG, "executeChangeCounty------------------- ${options}")
+        val idCounty = options.getSelectedId()
+        filter = filter.copy(county = idCounty)
+        emit(fetch())
     }
     private fun executeChangeProduct(filters: FilterOptions) = flow {
-        val productType = filters.getSelectedId()
-//TODO
-        emit(
-            HomeTransform.GoInit(
-                stations = listOf(),
-                filter = filter,
-                masters = Masters.Empty,
-                error = null
-            )
-        )
+        val i = filters.getSelectedId() ?: 0
+        val productType = ProductType.entries[i]
+        filter = filter.copy(productType = productType)
+        emit(fetch())
     }
 
     private fun executeChangeState(options: FilterOptions) = flow {
-        //TODO: Save favorite states
-        //TODO: Select current state
-//android.util.Log.e("AAA", "executeChangeState--000----------------- ${filter}")
-        options.getSelectedId()?.let { idState ->
-            val provinces = getProvinces(idState).getOrNull() ?: listOf()
-            val masters = Masters.Empty.copy(states = states, products = products, provinces = provinces)
-            filter = filter.copy(state = idState, province = null, county = null)
-            val res = getByState(idState, filter.productType)
-            if(res.isSuccess) {
-                emit(HomeTransform.GoInit(
-                    stations = res.getOrNull() ?: listOf(),
-                    filter = filter,
-                    masters = masters,
-                    error = null
-                ))
-            }
-            else {
-                emit(HomeTransform.GoInit(
-                    stations = listOf(),
-                    filter = filter,
-                    masters = masters,
-                    error = res.exceptionOrNull() ?: AppError.UnknownError
-                ))
-            }
-        } ?: run {
-            val masters = Masters.Empty.copy(states = states, products = products)
-            emit(
-                HomeTransform.GoInit(
-                    stations = listOf(),
-                    filter = filter,
-                    masters = masters,
-                    error = null
-                )
-            )
-        }
+        android.util.Log.e(TAG, "executeChangeState------------------- ${options}")
+        val idState = options.getSelectedId()
+        filter = filter.copy(state = idState, province = null, county = null)
+        emit(fetch())
     }
 
     private fun executeLoad() = flow {
-        val state = refresh()
+        filter = getFilter().getOrNull() ?: Filter()
+        val state = fetch()
         android.util.Log.e(TAG, "executeLoad------------------- prod ${state.masters.products.size}")
         android.util.Log.e(TAG, "executeLoad------------------- stat ${state.masters.states.size}")
         android.util.Log.e(TAG, "executeLoad------------------- prov ${state.masters.provinces.size}")
@@ -151,28 +121,35 @@ class HomeViewModel @Inject constructor(
         emit(state)
     }
 
-    private suspend fun refresh(): HomeTransform.GoInit {
+    private suspend fun fetch(): HomeTransform.GoInit {
         //products = getProducts().getOrNull() ?: listOf()
         products = listOf(
             ProductType.G95, ProductType.G98, ProductType.GOA, ProductType.GOAP, ProductType.GLP
         )
         states = getStates().getOrNull() ?: listOf()
 
-        filter = getFilter().getOrNull() ?: Filter()
         val county = filter.county
         val province = filter.province
         val state = filter.state
         val productType = filter.productType
+
+        android.util.Log.e("AAA", "refresh------- FILTER PRODUC ------ $productType")
+        android.util.Log.e("AAA", "refresh------- FILTER STATE ------ $state")
+        android.util.Log.e("AAA", "refresh------- FILTER PROVIN ------ $province")
+        android.util.Log.e("AAA", "refresh------- FILTER COUNTY ------ $county")
         val res = if(county != null && province != null && state != null) {
+            android.util.Log.e("AAA", "refresh------- COUNTY ------")
             provinces = getProvinces(state).getOrNull() ?: listOf()
             counties = getCounties(province).getOrNull() ?: listOf()
             getByCounty(county, productType)
         }
         else if(province != null && state != null) {
+            android.util.Log.e("AAA", "refresh------- PROVINCE ------")
             provinces = getProvinces(state).getOrNull() ?: listOf()
             getByProvince(province, productType)
         }
         else if(state != null) {
+            android.util.Log.e("AAA", "refresh------- STATE ------")
             getByState(state, productType)
         }
         else {
