@@ -34,10 +34,10 @@ import com.cesoft.cesgas.ui.theme.SepMin
 @Composable
 fun FilterZipCodeCompo(
     isVisible: MutableState<Boolean>,
-    zipCode: String?,
+    zipCode: String,
     onSave: (String) -> Unit
 ) {
-    val input = remember { mutableStateOf(zipCode ?: "") }
+    val input = remember { mutableStateOf(zipCode) }
     val error = remember { mutableStateOf("") }
     val txtTitle = stringResource(R.string.zip_code)
     val txtError = stringResource(R.string.zip_code)
@@ -54,12 +54,6 @@ fun FilterZipCodeCompo(
                     contentDescription = stringResource(R.string.back),
                     modifier = Modifier.clickable { isVisible.value = false }
                 )
-//                Text(
-//                    text = title,
-//                    fontWeight = FontWeight.Bold,
-//                    fontSize = FontMed,
-//                    modifier = Modifier.padding(start = SepMax *3)
-//                )
                 Row(
                     horizontalArrangement = Arrangement.End,
                     modifier = Modifier.weight(.5f)
@@ -96,18 +90,12 @@ fun FilterZipCodeCompo(
             modifier = Modifier.fillMaxWidth()
         ) {
             AddItemButton(txtTitle, Modifier.width(150.dp)) { isVisible.value = true }
-            zipCode?.let {
+            if(zipCode.isNotBlank()) {
                 SpendableCompo(
                     text = zipCode,
                     onClose = { onSave("") }
                 )
             }
-//            Text(
-//                text = zipCode ?: " - ",
-//                fontWeight = FontWeight.Bold,
-//                fontSize = FontMed,
-//                modifier = Modifier.padding(horizontal = SepMax)
-//            )
         }
     }
 }

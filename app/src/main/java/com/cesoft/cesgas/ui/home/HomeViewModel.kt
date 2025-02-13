@@ -85,29 +85,34 @@ class HomeViewModel @Inject constructor(
         emit(HomeTransform.AddSideEffect(HomeSideEffect.Close))
     }
 
-    private fun executeChangeProvince(options: FilterOptions) = flow {
-        val idProvince = options.getSelectedId()
-        filter = filter.copy(province = idProvince, county = null)
-        emit(fetch())
-    }
-    private fun executeChangeCounty(options: FilterOptions) = flow {
-        val idCounty = options.getSelectedId()
-        filter = filter.copy(county = idCounty)
-        emit(fetch())
-    }
     private fun executeChangeProduct(filters: FilterOptions) = flow {
         val i = filters.getSelectedId() ?: 0
         val productType = ProductType.entries[i]
         filter = filter.copy(productType = productType)
+        setFilter(filter)
         emit(fetch())
     }
     private fun executeChangeState(options: FilterOptions) = flow {
         val idState = options.getSelectedId()
         filter = filter.copy(state = idState, province = null, county = null)
+        setFilter(filter)
         emit(fetch())
     }
-    private fun executeChangeZipCode(zipCode: String?) = flow {
+    private fun executeChangeProvince(options: FilterOptions) = flow {
+        val idProvince = options.getSelectedId()
+        filter = filter.copy(province = idProvince, county = null)
+        setFilter(filter)
+        emit(fetch())
+    }
+    private fun executeChangeCounty(options: FilterOptions) = flow {
+        val idCounty = options.getSelectedId()
+        filter = filter.copy(county = idCounty)
+        setFilter(filter)
+        emit(fetch())
+    }
+    private fun executeChangeZipCode(zipCode: String) = flow {
         filter = filter.copy(zipCode = zipCode)
+        setFilter(filter)
         emit(fetch())
     }
 
@@ -170,7 +175,9 @@ class HomeViewModel @Inject constructor(
         )
 //android.util.Log.e("AAA", "refresh------- counties = ${masters.counties.size} ------")
 //android.util.Log.e("AAA", "refresh------- CP = $zipCode ------"+res.getOrNull()?.filter { s -> zipCode?.let { s.zipCode == it } ?: true }?.size)
-        val stations = res.getOrNull()?.filter { s -> zipCode?.let { s.zipCode == it } ?: true }
+        val stations = res.getOrNull()?.filter { s ->
+            if(zipCode.isNotBlank()) { s.zipCode == zipCode } else true
+        }
         if(stations != null) {
             return HomeTransform.GoInit(
                 stations = stations,

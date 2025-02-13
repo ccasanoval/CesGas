@@ -11,5 +11,5 @@ sealed class HomeIntent: Intent {
     data class ChangeAddressState(val filters: FilterOptions): HomeIntent()
     data class ChangeAddressProvince(val filters: FilterOptions): HomeIntent()
     data class ChangeAddressCounty(val filters: FilterOptions): HomeIntent()
-    data class ChangeAddressZipCode(val zipCode: String?): HomeIntent()
+    data class ChangeAddressZipCode(val zipCode: String): HomeIntent()
 }
