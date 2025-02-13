@@ -26,7 +26,6 @@ import com.cesoft.domain.usecase.GetByProvinceUC
 import com.cesoft.domain.usecase.GetByStateUC
 import com.cesoft.domain.usecase.GetCountiesUC
 import com.cesoft.domain.usecase.GetFilterUC
-import com.cesoft.domain.usecase.GetProductsUC
 import com.cesoft.domain.usecase.GetProvincesUC
 import com.cesoft.domain.usecase.GetStatesUC
 import com.cesoft.domain.usecase.SetFilterUC
@@ -78,6 +77,7 @@ class HomeViewModel @Inject constructor(
             is HomeIntent.ChangeAddressState -> executeChangeState(intent.filters)
             is HomeIntent.ChangeAddressProvince -> executeChangeProvince(intent.filters)
             is HomeIntent.ChangeAddressCounty -> executeChangeCounty(intent.filters)
+            is HomeIntent.ChangeAddressZipCode -> executeChangeZipCode(intent.zipCode)
             is HomeIntent.Map -> executeMap(intent.idStation)
         }
 
@@ -86,13 +86,11 @@ class HomeViewModel @Inject constructor(
     }
 
     private fun executeChangeProvince(options: FilterOptions) = flow {
-        android.util.Log.e(TAG, "executeChangeProvince------------------- ${options}")
         val idProvince = options.getSelectedId()
         filter = filter.copy(province = idProvince, county = null)
         emit(fetch())
     }
     private fun executeChangeCounty(options: FilterOptions) = flow {
-        android.util.Log.e(TAG, "executeChangeCounty------------------- ${options}")
         val idCounty = options.getSelectedId()
         filter = filter.copy(county = idCounty)
         emit(fetch())
@@ -103,11 +101,13 @@ class HomeViewModel @Inject constructor(
         filter = filter.copy(productType = productType)
         emit(fetch())
     }
-
     private fun executeChangeState(options: FilterOptions) = flow {
-        android.util.Log.e(TAG, "executeChangeState------------------- ${options}")
         val idState = options.getSelectedId()
         filter = filter.copy(state = idState, province = null, county = null)
+        emit(fetch())
+    }
+    private fun executeChangeZipCode(zipCode: String?) = flow {
+        filter = filter.copy(zipCode = zipCode)
         emit(fetch())
     }
 
@@ -132,11 +132,13 @@ class HomeViewModel @Inject constructor(
         val province = filter.province
         val state = filter.state
         val productType = filter.productType
+        val zipCode = filter.zipCode
 
         android.util.Log.e("AAA", "refresh------- FILTER PRODUC ------ $productType")
         android.util.Log.e("AAA", "refresh------- FILTER STATE ------ $state")
         android.util.Log.e("AAA", "refresh------- FILTER PROVIN ------ $province")
         android.util.Log.e("AAA", "refresh------- FILTER COUNTY ------ $county")
+        android.util.Log.e("AAA", "refresh------- FILTER ZIP CODE ------ $zipCode")
         val res = if(county != null && province != null && state != null) {
             android.util.Log.e("AAA", "refresh------- COUNTY ------")
             provinces = getProvinces(state).getOrNull() ?: listOf()
@@ -146,10 +148,12 @@ class HomeViewModel @Inject constructor(
         else if(province != null && state != null) {
             android.util.Log.e("AAA", "refresh------- PROVINCE ------")
             provinces = getProvinces(state).getOrNull() ?: listOf()
+            counties = getCounties(province).getOrNull() ?: listOf()
             getByProvince(province, productType)
         }
         else if(state != null) {
             android.util.Log.e("AAA", "refresh------- STATE ------")
+            provinces = getProvinces(state).getOrNull() ?: listOf()
             getByState(state, productType)
         }
         else {
@@ -164,7 +168,9 @@ class HomeViewModel @Inject constructor(
             provinces = provinces,
             counties = counties
         )
-        val stations = res.getOrNull()
+//android.util.Log.e("AAA", "refresh------- counties = ${masters.counties.size} ------")
+//android.util.Log.e("AAA", "refresh------- CP = $zipCode ------"+res.getOrNull()?.filter { s -> zipCode?.let { s.zipCode == it } ?: true }?.size)
+        val stations = res.getOrNull()?.filter { s -> zipCode?.let { s.zipCode == it } ?: true }
         if(stations != null) {
             return HomeTransform.GoInit(
                 stations = stations,

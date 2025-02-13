@@ -5,6 +5,7 @@ data class Filter(
     val state: Int? = null,
     val province: Int? = null,
     val county: Int? = null,
+    val zipCode: String? = null
 ) {
     companion object {
         val Empty = Filter()

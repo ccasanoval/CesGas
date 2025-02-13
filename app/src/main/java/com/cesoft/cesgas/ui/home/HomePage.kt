@@ -1,10 +1,6 @@
 package com.cesoft.cesgas.ui.home
 
-import android.graphics.drawable.Icon
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -27,20 +23,18 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.adidas.mvi.compose.MviScreen
 import com.cesoft.cesgas.R
-import com.cesoft.cesgas.ui.Util
 import com.cesoft.cesgas.ui.common.FilterCompo
 import com.cesoft.cesgas.ui.common.FilterField
 import com.cesoft.cesgas.ui.common.FilterOptions
+import com.cesoft.cesgas.ui.common.FilterZipCodeCompo
 import com.cesoft.cesgas.ui.common.LoadingCompo
 import com.cesoft.cesgas.ui.common.toMoneyFormat
 import com.cesoft.cesgas.ui.home.mvi.HomeIntent
@@ -139,6 +133,7 @@ private fun Header(
         val isProvinceVisible = remember { mutableStateOf(false) }
         val isCountyVisible = remember { mutableStateOf(false) }
         val isCityVisible = remember { mutableStateOf(false) }
+        val isZipCodeVisible = remember { mutableStateOf(false) }
 
         val products = mutableListOf<FilterField>()
         for(pt in state.masters.products) {
@@ -161,8 +156,9 @@ private fun Header(
         val counties = mutableListOf<FilterField>()
         for(c in state.masters.counties) {
             val selected = c.id == state.filter.province
-            val favorite = c.id == 4418 || c.id == 4326 || c.id == 4402 || c.id == 4354 || c.id == 7183//TODO: Delete when prefs in use
-            provinces.add(FilterField(c.id, c.name, selected, favorite))
+            val favorite = c.id == 4418 || c.id == 4326 || c.id == 4402 || c.id == 4354
+                    || c.id == 7183 || c.id == 4277 //TODO: Delete when prefs in use
+            counties.add(FilterField(c.id, c.name, selected, favorite))
         }
         Column {
             /// PRODUCT FILTER
@@ -178,7 +174,8 @@ private fun Header(
             FilterCompo(
                 stringResource(R.string.state),
                 isStateVisible,
-                FilterOptions(states), unique = true
+                FilterOptions(states),
+                unique = true
             ) {
                 reduce(HomeIntent.ChangeAddressState(it))
             }
@@ -192,8 +189,13 @@ private fun Header(
                 ) {
                     reduce(HomeIntent.ChangeAddressProvince(it))
                 }
+                /// ZIP CODE FILTER
+                FilterZipCodeCompo(isZipCodeVisible, state.filter.zipCode) {
+                    isZipCodeVisible.value = false
+                    reduce(HomeIntent.ChangeAddressZipCode(it))
+                }
+                /// COUNTY FILTER
                 if(state.filter.province != null) {
-                    /// COUNTY FILTER
                     FilterCompo(
                         stringResource(R.string.county),
                         isCountyVisible,

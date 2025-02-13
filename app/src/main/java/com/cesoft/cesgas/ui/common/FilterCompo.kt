@@ -253,7 +253,7 @@ private fun Item(
 
 //--------------------------------------------------------------------------------------------------
 @Composable
-private fun AddItemButton(
+internal fun AddItemButton(
     title: String,
     modifier: Modifier = Modifier,
     onClick: () -> Unit,

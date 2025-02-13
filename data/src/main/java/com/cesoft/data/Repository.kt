@@ -52,7 +52,6 @@ class Repository(
         val res = remote.getProvinces(ids)
         return if (res.isSuccess) {
             val provinces = res.getOrNull()?.map { it.toEntity() } ?: listOf()
-            android.util.Log.e("AAA", "getProvinces------------------- ${provinces.size}")
             Result.success(provinces)
         } else {
             Result.failure(res.exceptionOrNull() ?: AppError.UnknownError)
@@ -110,9 +109,7 @@ class Repository(
         val res = remote.getByState(ids)
         return if (res.isSuccess) {
             val data = res.getOrNull()?.list?.map { it.toEntity() } ?: listOf()
-            for(i in 0..5) android.util.Log.e("AAA", "getByState a----------- ${data[i].prices.G95}")
             val filtered = filterByType(productType, data)
-            for(i in 0..5) android.util.Log.e("AAA", "getByState b----------- ${filtered[i].prices.G95}")
             Result.success(filtered)
         } else {
             Result.failure(res.exceptionOrNull() ?: AppError.UnknownError)

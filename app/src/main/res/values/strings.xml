@@ -8,6 +8,7 @@
     <string name="error_no_state_selected">Seleccione una comunidad en el filtro</string>
     <string name="error_unknown">Error desconocido</string>
     <string name="error_not_found">No hay datos</string>
+    <string name="error_zip_code">El Código Postal no es correcto</string>
 
     <!-- Actions -->
     <string name="select">Selecciona</string>
@@ -23,6 +24,7 @@
     <string name="province">Provincia</string>
     <string name="county">Municipio</string>
     <string name="city">Localidad</string>
+    <string name="zip_code">Código Postal</string>
 
     <!-- Product -->
     <string name="product">Producto</string>
