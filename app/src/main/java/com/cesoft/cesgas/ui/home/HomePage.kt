@@ -255,7 +255,7 @@ private fun Item(
             }
         }
         // Map Icon
-        IconButton(onClick = { reduce(HomeIntent.Load) }) {
+        IconButton(onClick = { reduce(HomeIntent.GoMap(station)) }) {
             Icon(Icons.Default.Place, null)
         }
     }

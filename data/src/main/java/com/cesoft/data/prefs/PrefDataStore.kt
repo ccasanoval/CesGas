@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -38,6 +39,15 @@ suspend fun Context.writeDouble(key: String, value: Double) {
 suspend fun Context.readDouble(key: String): Double? {
     return dataStore.data.map { pref ->
         pref[doublePreferencesKey(key)]
+    }.firstOrNull()
+}
+
+suspend fun Context.writeFloat(key: String, value: Float) {
+    dataStore.edit { pref -> pref[floatPreferencesKey(key)] = value }
+}
+suspend fun Context.readFloat(key: String): Float? {
+    return dataStore.data.map { pref ->
+        pref[floatPreferencesKey(key)]
     }.firstOrNull()
 }
 

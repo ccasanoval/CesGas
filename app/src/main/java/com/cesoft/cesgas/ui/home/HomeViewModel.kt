@@ -1,11 +1,13 @@
 package com.cesoft.cesgas.ui.home
 
+import android.app.Activity
 import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import com.adidas.mvi.MviHost
+import com.adidas.mvi.Reducer
 import com.adidas.mvi.State
 import com.adidas.mvi.reducer.Reducer
 import com.cesoft.cesgas.Page
@@ -21,13 +23,16 @@ import com.cesoft.domain.entity.AddressProvince
 import com.cesoft.domain.entity.AddressState
 import com.cesoft.domain.entity.Filter
 import com.cesoft.domain.entity.ProductType
+import com.cesoft.domain.entity.Station
 import com.cesoft.domain.usecase.GetByCountyUC
 import com.cesoft.domain.usecase.GetByProvinceUC
 import com.cesoft.domain.usecase.GetByStateUC
 import com.cesoft.domain.usecase.GetCountiesUC
+import com.cesoft.domain.usecase.GetCurrentStationUC
 import com.cesoft.domain.usecase.GetFilterUC
 import com.cesoft.domain.usecase.GetProvincesUC
 import com.cesoft.domain.usecase.GetStatesUC
+import com.cesoft.domain.usecase.SetCurrentStationUC
 import com.cesoft.domain.usecase.SetFilterUC
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -38,9 +43,10 @@ import javax.inject.Inject
 class HomeViewModel @Inject constructor(
     private val getFilter: GetFilterUC,
     private val setFilter: SetFilterUC,
-    //TODO
     //private val getFavorites: GetFavoritesUC,
     //private val setFavorites: SetFavoritesUC,
+    //private val getCurrentStation: GetCurrentStationUC,
+    private val setCurrentStation: SetCurrentStationUC,
 
     //private val getProducts: GetProductsUC,
     private val getStates: GetStatesUC,
@@ -58,7 +64,7 @@ class HomeViewModel @Inject constructor(
     private var counties = listOf<AddressCounty>()
     private var filter = Filter(productType = ProductType.G95, state = 28)//TODO: Prefs
 
-    private val reducer = Reducer(
+    private val reducer: Reducer<HomeIntent, State<HomeState, HomeSideEffect>> = Reducer(
         coroutineScope = viewModelScope,
         defaultDispatcher = Dispatchers.Default,
         initialInnerState = HomeState.Loading,
@@ -78,7 +84,7 @@ class HomeViewModel @Inject constructor(
             is HomeIntent.ChangeAddressProvince -> executeChangeProvince(intent.filters)
             is HomeIntent.ChangeAddressCounty -> executeChangeCounty(intent.filters)
             is HomeIntent.ChangeAddressZipCode -> executeChangeZipCode(intent.zipCode)
-            is HomeIntent.Map -> executeMap(intent.idStation)
+            is HomeIntent.GoMap -> executeMap(intent.station)
         }
 
     private fun executeClose() = flow {
@@ -119,10 +125,10 @@ class HomeViewModel @Inject constructor(
     private fun executeLoad() = flow {
         filter = getFilter().getOrNull() ?: Filter()
         val state = fetch()
-        android.util.Log.e(TAG, "executeLoad------------------- prod ${state.masters.products.size}")
-        android.util.Log.e(TAG, "executeLoad------------------- stat ${state.masters.states.size}")
-        android.util.Log.e(TAG, "executeLoad------------------- prov ${state.masters.provinces.size}")
-        android.util.Log.e(TAG, "executeLoad------------------- coun ${state.masters.counties.size}")
+        //android.util.Log.e(TAG, "executeLoad------------------- prod ${state.masters.products.size}")
+        //android.util.Log.e(TAG, "executeLoad------------------- stat ${state.masters.states.size}")
+        //android.util.Log.e(TAG, "executeLoad------------------- prov ${state.masters.provinces.size}")
+        //android.util.Log.e(TAG, "executeLoad------------------- coun ${state.masters.counties.size}")
         emit(state)
     }
 
@@ -145,19 +151,16 @@ class HomeViewModel @Inject constructor(
         android.util.Log.e("AAA", "refresh------- FILTER COUNTY ------ $county")
         android.util.Log.e("AAA", "refresh------- FILTER ZIP CODE ------ $zipCode")
         val res = if(county != null && province != null && state != null) {
-            android.util.Log.e("AAA", "refresh------- COUNTY ------")
             provinces = getProvinces(state).getOrNull() ?: listOf()
             counties = getCounties(province).getOrNull() ?: listOf()
             getByCounty(county, productType)
         }
         else if(province != null && state != null) {
-            android.util.Log.e("AAA", "refresh------- PROVINCE ------")
             provinces = getProvinces(state).getOrNull() ?: listOf()
             counties = getCounties(province).getOrNull() ?: listOf()
             getByProvince(province, productType)
         }
         else if(state != null) {
-            android.util.Log.e("AAA", "refresh------- STATE ------")
             provinces = getProvinces(state).getOrNull() ?: listOf()
             getByState(state, productType)
         }
@@ -173,12 +176,11 @@ class HomeViewModel @Inject constructor(
             provinces = provinces,
             counties = counties
         )
-//android.util.Log.e("AAA", "refresh------- counties = ${masters.counties.size} ------")
-//android.util.Log.e("AAA", "refresh------- CP = $zipCode ------"+res.getOrNull()?.filter { s -> zipCode?.let { s.zipCode == it } ?: true }?.size)
         val stations = res.getOrNull()?.filter { s ->
             if(zipCode.isNotBlank()) { s.zipCode == zipCode } else true
         }
         if(stations != null) {
+            stations.forEach { android.util.Log.e("SM", "SM---------- ${it.location}") }
             return HomeTransform.GoInit(
                 stations = stations,
                 filter = filter,
@@ -194,31 +196,27 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    private fun executeMap(idStation: Int) = flow {
-        emit(HomeTransform.AddSideEffect(HomeSideEffect.Start))//TODO: Map page...
+    private fun executeMap(station: Station) = flow {
+        setCurrentStation(station)
+        emit(HomeTransform.AddSideEffect(HomeSideEffect.GoMap))
     }
 
     fun consumeSideEffect(
         sideEffect: HomeSideEffect,
         navController: NavController,
-        context: Context,
+        context: Context
     ) {
+        android.util.Log.e("AA", "consumeSideEffect-------- $sideEffect")
         when(sideEffect) {
             HomeSideEffect.Start -> {
                 navController.navigate(Page.Home.route)
             }
-            else -> navController.navigate(Page.Home.route)
-//            HomeSideEffect.GoSettings -> {
-//                navController.navigate(Page.Settings.route)
-//                //Toast.makeText(context, "Invalid credentials", Toast.LENGTH_SHORT).show()
-//            }
-//            HomeSideEffect.GoTracks -> {
-//                navController.navigate(Page.Tracks.route)
-//            }
-//            HomeSideEffect.GoMap -> {
-//                navController.navigate(Page.Map.route)
-//            }
-//            HomeSideEffect.Close -> (context as Activity).finish()
+            HomeSideEffect.GoMap -> {
+                navController.navigate(Page.Map.route)
+            }
+            HomeSideEffect.Close -> {
+                (context as Activity).finish()
+            }
         }
     }
 

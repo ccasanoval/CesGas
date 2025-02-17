@@ -124,8 +124,8 @@ data class StationDataDto(
 
     private fun toLocation(): Location {
         try {
-            val lat = latitude?.toDouble() ?: 0.0
-            val lon = longitude?.toDouble() ?: 0.0
+            val lat = latitude?.replace(',', '.')?.toDouble() ?: 0.0
+            val lon = longitude?.replace(',', '.')?.toDouble() ?: 0.0
             return Location(lat, lon)
         }
         catch (e: Exception) {

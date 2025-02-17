@@ -8,6 +8,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.cesoft.cesgas.ui.home.HomeViewModel
 import com.cesoft.cesgas.ui.home.HomePage
+import com.cesoft.cesgas.ui.map.MapPage
+import com.cesoft.cesgas.ui.map.MapViewModel
 
 sealed class Page(val route: String) {
 
@@ -27,13 +29,10 @@ fun PageNavigation() {
     val navController = rememberNavController()
     NavHost(navController, Page.Home.route) {
         composable(route = Page.Home.route) {
-            val viewModel = hiltViewModel<HomeViewModel>()
-            HomePage(navController, viewModel)
+            HomePage(navController, hiltViewModel<HomeViewModel>())
         }
-//        composable(route = Page.Settings.route) { SettingsPage(navController) }
-//        composable(route = Page.Tracking.route) { TrackingPage(navController) }
-//        composable(route = Page.Map.route) { MapPage(navController) }
-//        composable(route = Page.Tracks.route) { TracksPage(navController) }
-//        composable(route = Page.TrackDetail.route) { TrackDetailsPage(navController) }
+        composable(route = Page.Map.route) {
+            MapPage(navController, hiltViewModel<MapViewModel>())
+        }
     }
 }

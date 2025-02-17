@@ -6,14 +6,7 @@ import com.adidas.mvi.transform.ViewTransform
 import com.cesoft.domain.entity.Filter
 import com.cesoft.domain.entity.Station
 
-
 internal object HomeTransform {
-
-    data object GoLoading: ViewTransform<HomeState, HomeSideEffect>() {
-        override fun mutate(currentState: HomeState): HomeState {
-            return HomeState.Loading
-        }
-    }
 
     data class GoInit(
         val stations: List<Station> = listOf(),

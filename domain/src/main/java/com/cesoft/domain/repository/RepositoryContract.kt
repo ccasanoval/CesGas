@@ -14,6 +14,10 @@ interface RepositoryContract {
     suspend fun getFilter(): Result<Filter>
     suspend fun setFilter(filter: Filter): Result<Unit>
 
+    // CURRENT STATION
+    suspend fun getCurrentStation(): Result<Station>
+    suspend fun setCurrentStation(station: Station): Result<Unit>
+
     // REMOTE MASTERS
     suspend fun getProducts(): Result<List<Product>>
     suspend fun getStates(): Result<List<AddressState>>

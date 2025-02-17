@@ -8,7 +8,7 @@ import com.cesoft.data.entity.StationDto
 import retrofit2.http.GET
 import retrofit2.http.Path
 
-
+// DOC : https://sedeaplicaciones.minetur.gob.es/ServiciosRESTCarburantes/PreciosCarburantes/help
 interface ApiService {
     //@Headers("Accept: application/json") already in AuthInterceptor
 

@@ -29,6 +29,13 @@ class Repository(
             return Result.success(Unit)
         }
     }
+    /// CURRENT STATION
+    override suspend fun getCurrentStation(): Result<Station> {
+        prefs.getCurrentStation().let { return Result.success(it) }
+    }
+    override suspend fun setCurrentStation(station: Station): Result<Unit> {
+        prefs.setCurrentStation(station).let { return Result.success(Unit) }
+    }
 
     /// REMOTE MASTERS
     override suspend fun getProducts(): Result<List<Product>> {
