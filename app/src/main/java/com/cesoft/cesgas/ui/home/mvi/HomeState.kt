@@ -25,6 +25,7 @@ sealed class HomeState: LoggableState {
         val stations: List<Station> = listOf(),
         val filter: Filter = Filter.Empty,
         val masters: Masters = Masters.Empty,
+        val wait: Boolean = false,
         val error: Throwable? = null
     ): HomeState()
 }

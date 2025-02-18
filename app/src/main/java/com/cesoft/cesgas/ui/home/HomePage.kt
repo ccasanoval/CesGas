@@ -91,6 +91,9 @@ private fun Init(
     android.util.Log.e("AAA", "Init------------------- prov ${state.masters.provinces.size}")
     android.util.Log.e("AAA", "Init------------------- coun ${state.masters.counties.size}")
     Column {
+        if(state.wait) {
+            LoadingCompo(background = false)
+        }
         Header(state, reduce)
         StationList(state, reduce)
     }

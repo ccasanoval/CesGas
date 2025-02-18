@@ -28,7 +28,6 @@ import com.cesoft.domain.usecase.GetByCountyUC
 import com.cesoft.domain.usecase.GetByProvinceUC
 import com.cesoft.domain.usecase.GetByStateUC
 import com.cesoft.domain.usecase.GetCountiesUC
-import com.cesoft.domain.usecase.GetCurrentStationUC
 import com.cesoft.domain.usecase.GetFilterUC
 import com.cesoft.domain.usecase.GetProvincesUC
 import com.cesoft.domain.usecase.GetStatesUC
@@ -45,7 +44,6 @@ class HomeViewModel @Inject constructor(
     private val setFilter: SetFilterUC,
     //private val getFavorites: GetFavoritesUC,
     //private val setFavorites: SetFavoritesUC,
-    //private val getCurrentStation: GetCurrentStationUC,
     private val setCurrentStation: SetCurrentStationUC,
 
     //private val getProducts: GetProductsUC,
@@ -62,7 +60,7 @@ class HomeViewModel @Inject constructor(
     private var states = listOf<AddressState>()
     private var provinces = listOf<AddressProvince>()
     private var counties = listOf<AddressCounty>()
-    private var filter = Filter(productType = ProductType.G95, state = 28)//TODO: Prefs
+    private var filter = Filter(productType = ProductType.G95, state = 28)//TODO: Prefs---------------------
 
     private val reducer: Reducer<HomeIntent, State<HomeState, HomeSideEffect>> = Reducer(
         coroutineScope = viewModelScope,
@@ -92,6 +90,7 @@ class HomeViewModel @Inject constructor(
     }
 
     private fun executeChangeProduct(filters: FilterOptions) = flow {
+        emit(HomeTransform.Wait)
         val i = filters.getSelectedId() ?: 0
         val productType = ProductType.entries[i]
         filter = filter.copy(productType = productType)

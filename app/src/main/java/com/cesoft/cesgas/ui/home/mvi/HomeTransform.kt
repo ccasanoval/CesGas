@@ -8,6 +8,15 @@ import com.cesoft.domain.entity.Station
 
 internal object HomeTransform {
 
+    data object Wait: ViewTransform<HomeState, HomeSideEffect>() {
+        override fun mutate(currentState: HomeState): HomeState {
+            if(currentState is HomeState.Init)
+                return currentState.copy(wait = true)
+            else
+                return currentState
+        }
+    }
+
     data class GoInit(
         val stations: List<Station> = listOf(),
         val filter: Filter = Filter.Empty,
