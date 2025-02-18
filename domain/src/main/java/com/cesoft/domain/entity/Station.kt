@@ -16,5 +16,9 @@ data class Station(
 //    val idProvince: String,
 //    val idState: String,
 ) {
+    companion object {
+        val Empty = Station(0, "", "", "", "", "",
+            Location(0.0, 0.0), "", "", Prices.Empty)
+    }
 }
 

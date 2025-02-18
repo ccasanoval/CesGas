@@ -24,6 +24,7 @@ import com.cesoft.domain.entity.AddressState
 import com.cesoft.domain.entity.Filter
 import com.cesoft.domain.entity.ProductType
 import com.cesoft.domain.entity.Station
+import com.cesoft.domain.usecase.FilterStationsUC
 import com.cesoft.domain.usecase.GetByCountyUC
 import com.cesoft.domain.usecase.GetByProvinceUC
 import com.cesoft.domain.usecase.GetByStateUC
@@ -42,20 +43,22 @@ import javax.inject.Inject
 class HomeViewModel @Inject constructor(
     private val getFilter: GetFilterUC,
     private val setFilter: SetFilterUC,
+    private val filterStations: FilterStationsUC,
+    private val setCurrentStation: SetCurrentStationUC,
     //private val getFavorites: GetFavoritesUC,
     //private val setFavorites: SetFavoritesUC,
-    private val setCurrentStation: SetCurrentStationUC,
-
     //private val getProducts: GetProductsUC,
+
     private val getStates: GetStatesUC,
     private val getProvinces: GetProvincesUC,
     private val getCounties: GetCountiesUC,
 
     private val getByState: GetByStateUC,
     private val getByProvince: GetByProvinceUC,
-    private val getByCounty: GetByCountyUC,
-
+    private val getByCounty: GetByCountyUC
+    
 ): ViewModel(), MviHost<HomeIntent, State<HomeState, HomeSideEffect>> {
+
     private var products = listOf<ProductType>()
     private var states = listOf<AddressState>()
     private var provinces = listOf<AddressProvince>()
@@ -149,19 +152,17 @@ class HomeViewModel @Inject constructor(
         android.util.Log.e("AAA", "refresh------- FILTER PROVIN ------ $province")
         android.util.Log.e("AAA", "refresh------- FILTER COUNTY ------ $county")
         android.util.Log.e("AAA", "refresh------- FILTER ZIP CODE ------ $zipCode")
-        val res = if(county != null && province != null && state != null) {
+
+        if(county != null && province != null && state != null) {
             provinces = getProvinces(state).getOrNull() ?: listOf()
             counties = getCounties(province).getOrNull() ?: listOf()
-            getByCounty(county, productType)
         }
         else if(province != null && state != null) {
             provinces = getProvinces(state).getOrNull() ?: listOf()
             counties = getCounties(province).getOrNull() ?: listOf()
-            getByProvince(province, productType)
         }
         else if(state != null) {
             provinces = getProvinces(state).getOrNull() ?: listOf()
-            getByState(state, productType)
         }
         else {
             return HomeTransform.GoInit(
@@ -175,11 +176,13 @@ class HomeViewModel @Inject constructor(
             provinces = provinces,
             counties = counties
         )
-        val stations = res.getOrNull()?.filter { s ->
+
+        val res = filterStations(filter)
+        val stations = res.filter { s ->
             if(zipCode.isNotBlank()) { s.zipCode == zipCode } else true
         }
-        if(stations != null) {
-            stations.forEach { android.util.Log.e("SM", "SM---------- ${it.location}") }
+        if(stations.isNotEmpty()) {
+            //stations.forEach { android.util.Log.e("SM", "SM---------- ${it.location}") }
             return HomeTransform.GoInit(
                 stations = stations,
                 filter = filter,
@@ -188,16 +191,24 @@ class HomeViewModel @Inject constructor(
             )
         }
         else {
-            val e: AppError = res.exceptionOrNull()
-                ?.let { AppError.DataBaseError(it) } ?: run { AppError.NotFound }
+            //val e: AppError = res.exceptionOrNull()
+                //?.let { AppError.DataBaseError(it) } ?: run { AppError.NotFound }
+            val e = AppError.NotFound
             Log.e(TAG, "refresh:e: $e")
             return HomeTransform.GoInit(error = e)
         }
     }
 
-    private fun executeMap(station: Station) = flow {
-        setCurrentStation(station)
-        emit(HomeTransform.AddSideEffect(HomeSideEffect.GoMap))
+    private fun executeMap(station: Station?) = flow {
+        station?.let {
+            setCurrentStation(station)
+            emit(HomeTransform.AddSideEffect(HomeSideEffect.GoMap))
+        } ?: run {
+            setCurrentStation(Station.Empty)
+            emit(HomeTransform.AddSideEffect(HomeSideEffect.GoMap))
+            android.util.Log.e("VM", "executeMap-------------------- FILTER")
+            //TODO: Go map with filter
+        }
     }
 
     fun consumeSideEffect(

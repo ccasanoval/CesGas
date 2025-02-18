@@ -91,18 +91,16 @@ private fun Init(
     android.util.Log.e("AAA", "Init------------------- prov ${state.masters.provinces.size}")
     android.util.Log.e("AAA", "Init------------------- coun ${state.masters.counties.size}")
     Column {
-        if(state.wait) {
-            LoadingCompo(background = false)
-        }
-        Header(state, reduce)
+        if(state.wait) LoadingCompo(background = false)
+        HeaderError(state)
+        HeaderFilter(state, reduce)
         StationList(state, reduce)
     }
 }
 
 @Composable
-private fun Header(
-    state: HomeState.Init,
-    reduce: (HomeIntent) -> Unit
+private fun HeaderError(
+    state: HomeState.Init
 ) {
     var isErrorVisible by remember { mutableStateOf(true) }
     LaunchedEffect(state.error) { isErrorVisible = true }
@@ -126,10 +124,21 @@ private fun Header(
             }
         }
     }
+}
 
+@Composable
+private fun HeaderFilter(
+    state: HomeState.Init,
+    reduce: (HomeIntent) -> Unit
+) {
     var isVisible by remember { mutableStateOf(false) }
-    Button(onClick = { isVisible = !isVisible }, modifier = Modifier.padding(SepMed)) {
-        Text(text = stringResource(if(isVisible) R.string.hide_filter else R.string.show_filter))
+    Row {
+        Button(onClick = { isVisible = !isVisible }, modifier = Modifier.padding(SepMed)) {
+            Text(text = stringResource(if (isVisible) R.string.hide_filter else R.string.show_filter))
+        }
+        Button(onClick = { reduce(HomeIntent.GoMap()) }, modifier = Modifier.padding(SepMed)) {
+            Text(text = stringResource(R.string.map))
+        }
     }
     if(isVisible) {
         val isStateVisible = remember { mutableStateOf(false) }
@@ -141,7 +150,7 @@ private fun Header(
         val products = mutableListOf<FilterField>()
         for(pt in state.masters.products) {
             val selected = pt == state.filter.productType
-            val favorite = pt == ProductType.G95//TODO: Delete when prefs in use
+            val favorite = pt == ProductType.G95//TODO: Delete when prefs in use-------------------------------
             products.add(FilterField(pt.ordinal, pt.name, selected, favorite))
         }
         val states = mutableListOf<FilterField>()

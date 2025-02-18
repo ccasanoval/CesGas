@@ -18,6 +18,7 @@
     <string name="delete">Eliminar</string>
     <string name="show_filter">Ver filtro</string>
     <string name="hide_filter">Cerrar filtro</string>
+    <string name="map">Mapa</string>
 
     <!-- Location -->
     <string name="state">Autonomía</string>
