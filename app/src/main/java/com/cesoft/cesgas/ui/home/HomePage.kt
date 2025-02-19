@@ -1,10 +1,14 @@
 package com.cesoft.cesgas.ui.home
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -18,16 +22,21 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.adidas.mvi.compose.MviScreen
 import com.cesoft.cesgas.R
@@ -49,6 +58,8 @@ import com.cesoft.domain.entity.Location
 import com.cesoft.domain.entity.Prices
 import com.cesoft.domain.entity.ProductType
 import com.cesoft.domain.entity.Station
+
+private val TitleHeight = 50.dp
 
 @Composable
 fun HomePage(
@@ -92,7 +103,16 @@ private fun Init(
     android.util.Log.e("AAA", "Init------------------- coun ${state.masters.counties.size}")
     Column {
         if(state.wait) LoadingCompo(background = false)
-        HeaderError(state)
+
+        val isErrorVisible = remember { mutableStateOf(true) }
+        LaunchedEffect(state.error) { isErrorVisible.value = true }
+        if(state.error != null && isErrorVisible.value) {
+            HeaderError(state.error.message(LocalContext.current), isErrorVisible)
+        }
+        else {
+            HeaderTitle()
+        }
+
         HeaderFilter(state, reduce)
         StationList(state, reduce)
     }
@@ -100,29 +120,52 @@ private fun Init(
 
 @Composable
 private fun HeaderError(
-    state: HomeState.Init
+    text: String,
+    isErrorVisible: MutableState<Boolean>,
 ) {
-    var isErrorVisible by remember { mutableStateOf(true) }
-    LaunchedEffect(state.error) { isErrorVisible = true }
-    if(state.error != null && isErrorVisible) {
-        Row(
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.inverseSurface)
-                .fillMaxWidth()
-        ) {
-            Text(
-                text = state.error.message(LocalContext.current),
-                color = MaterialTheme.colorScheme.inversePrimary,
-                modifier = Modifier.padding(SepMax).weight(.5f)
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .background(MaterialTheme.colorScheme.inverseSurface)
+            .fillMaxWidth()
+            .height(TitleHeight)
+            .padding(SepMed)
+    ) {
+        Text(
+            text = text,
+            color = MaterialTheme.colorScheme.inversePrimary,
+            modifier = Modifier.padding(start = SepMax).weight(.5f)
+        )
+        IconButton(onClick = { isErrorVisible.value = false }) {
+            Icon(
+                imageVector = Icons.Default.Close,
+                contentDescription = stringResource(R.string.close),
+                tint = MaterialTheme.colorScheme.inversePrimary
             )
-            IconButton(onClick = { isErrorVisible = false }) {
-                Icon(
-                    imageVector = Icons.Default.Close,
-                    contentDescription = stringResource(R.string.close),
-                    tint = MaterialTheme.colorScheme.inversePrimary
-                )
-            }
         }
+    }
+}
+
+@Composable
+private fun HeaderTitle() {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(TitleHeight)
+            .padding(SepMed)
+    ) {
+        Icon(
+            painter = painterResource(R.mipmap.ic_launcher_round),
+            contentDescription = stringResource(R.string.app_name),
+            tint = Color.Unspecified,
+            modifier = Modifier.size(32.dp)
+        )
+        Text(
+            text = stringResource(R.string.app_name),
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(start = SepMed)
+        )
     }
 }
 
@@ -136,6 +179,7 @@ private fun HeaderFilter(
         Button(onClick = { isVisible = !isVisible }, modifier = Modifier.padding(SepMed)) {
             Text(text = stringResource(if (isVisible) R.string.hide_filter else R.string.show_filter))
         }
+        Spacer(modifier = Modifier.weight(.5f))
         Button(onClick = { reduce(HomeIntent.GoMap()) }, modifier = Modifier.padding(SepMed)) {
             Text(text = stringResource(R.string.map))
         }
