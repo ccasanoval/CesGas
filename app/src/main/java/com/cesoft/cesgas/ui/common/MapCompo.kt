@@ -9,20 +9,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.viewinterop.AndroidView
-import com.cesoft.domain.entity.Location
 import com.cesoft.domain.entity.Station
 import org.osmdroid.config.Configuration
 import org.osmdroid.util.BoundingBox
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
-import org.osmdroid.views.overlay.Polyline
 import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
-
 
 @SuppressLint("UseCompatLoadingForDrawables")
 @Composable
@@ -44,32 +39,34 @@ fun MapCompo(
             val locationOverlay = MyLocationNewOverlay(GpsMyLocationProvider(context), mapView)
             locationOverlay.enableMyLocation()
             view.overlays.add(locationOverlay)
-            //view.controller.setCenter(locationOverlay.myLocation)
+            view.controller.setCenter(locationOverlay.myLocation)
 
-            val points = stations.map { s -> GeoPoint(s.location.latitude, s.location.longitude) }
+            val icon = context.getDrawable(android.R.drawable.star_big_on)
+            val ss = stations.filter { it.location.latitude != 0.0 && it.location.latitude != 0.0 }
+            ss.map { s ->
+                addMarker(
+                    mapView = view,
+                    geoPoint = GeoPoint(s.location.latitude, s.location.longitude),
+                    icon = icon,
+                    //title = s.title,
+                    //snippet = "Horario: " + s.hours +"\n Precios: "+s.prices.G95,
+                    onClick = {
+                        //TODO: Show info window
+                        android.util.Log.e("AAA", "------------------ ${s.title} : ${s.hours} : ${s.prices.G95}")
+                    }
+                )
+            }
 
-            val iIni = context.getDrawable(android.R.drawable.star_off)
-            iIni?.setTint(Color.Green.toArgb())
-            val iEnd = context.getDrawable(android.R.drawable.star_on)
-            iEnd?.setTint(Color.Red.toArgb())
-            points.firstOrNull()?.let { addMarker(view, it, iIni) }
-            points.lastOrNull()?.let { addMarker(view, it, iEnd) }
-
-            val polyline = Polyline(mapView)
-            polyline.isGeodesic = true
-            polyline.setPoints(points)
-            view.overlays.add(polyline)
-            points.lastOrNull()?.let { view.controller.setCenter(it) }
-
-            if(doZoom) view.zoomToBoundingBox(polyline.bounds, false)
             view.addOnFirstLayoutListener { _, _, _, _, _ ->//v, left, top, right, bottom ->
                 //if (points.isEmpty()) {
                     //view.controller.setCenter(locationOverlay.myLocation)
                     //location?.let { view.controller.setCenter(GeoPoint(it.latitude, it.longitude)) }
                 //} else {
-                //view.zoomToBoundingBox(polyline.bounds, false)
+                val gps = ss.map { GeoPoint(it.location.latitude, it.location.longitude) }
+                view.zoomToBoundingBox(BoundingBox.fromGeoPointsSafe(gps), false)
+                //view.controller.setCenter(locationOverlay.myLocation)
                 //}
-                //view.invalidate()
+                view.invalidate()
             }
         }
     }
@@ -113,14 +110,13 @@ fun addMarker(
     icon: Drawable?=null,
     title: String?=null,
     snippet : String?=null,
-    //onClick: (Marker, MapView) -> Boolean
     onClick: (() -> Unit)? = null
 ): Marker {
     val marker = Marker(mapView)
     marker.position = geoPoint
     marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
     marker.infoWindow = null
-    marker.setOnMarkerClickListener { _, _ -> //onClick(m, v)
+    marker.setOnMarkerClickListener { _, _ ->
         onClick?.let {
             it()
             true

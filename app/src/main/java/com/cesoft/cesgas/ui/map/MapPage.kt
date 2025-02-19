@@ -11,7 +11,6 @@ import com.cesoft.cesgas.ui.common.LoadingCompo
 import com.cesoft.cesgas.ui.common.MapCompo
 import com.cesoft.cesgas.ui.common.rememberMapCompo
 import com.cesoft.cesgas.ui.map.mvi.MapIntent
-import com.cesoft.cesgas.ui.map.mvi.MapSideEffect
 import com.cesoft.cesgas.ui.map.mvi.MapState
 
 @Composable
