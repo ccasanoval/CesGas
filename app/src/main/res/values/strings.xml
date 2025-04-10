@@ -5,7 +5,7 @@
     <string name="station_list">Estaciones de %s con %s</string>
 
     <!-- Errors -->
-    <string name="error_no_state_selected">Seleccione una comunidad en el filtro</string>
+    <string name="error_no_state_selected">Selecciona una comunidad en el filtro</string>
     <string name="error_unknown">Error desconocido</string>
     <string name="error_not_found">No hay datos</string>
     <string name="error_zip_code">El Código Postal no es correcto</string>
@@ -41,4 +41,7 @@
     <string name="gnc">GNC</string>
     <string name="gnl">GNL</string>
     <string name="h2">Hidrógeno</string>
+
+    <!-- Characteristics -->
+    <string name="price">Precio: </string>
 </resources>

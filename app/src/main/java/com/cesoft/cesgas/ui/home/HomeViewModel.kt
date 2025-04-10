@@ -127,15 +127,10 @@ class HomeViewModel @Inject constructor(
     private fun executeLoad() = flow {
         filter = getFilter().getOrNull() ?: Filter()
         val state = fetch()
-        //android.util.Log.e(TAG, "executeLoad------------------- prod ${state.masters.products.size}")
-        //android.util.Log.e(TAG, "executeLoad------------------- stat ${state.masters.states.size}")
-        //android.util.Log.e(TAG, "executeLoad------------------- prov ${state.masters.provinces.size}")
-        //android.util.Log.e(TAG, "executeLoad------------------- coun ${state.masters.counties.size}")
         emit(state)
     }
 
     private suspend fun fetch(): HomeTransform.GoInit {
-        //products = getProducts().getOrNull() ?: listOf()
         products = listOf(
             ProductType.G95, ProductType.G98, ProductType.GOA, ProductType.GOAP, ProductType.GLP
         )
@@ -182,7 +177,6 @@ class HomeViewModel @Inject constructor(
             if(zipCode.isNotBlank()) { s.zipCode == zipCode } else true
         }
         if(stations.isNotEmpty()) {
-            //stations.forEach { android.util.Log.e("SM", "SM---------- ${it.location}") }
             return HomeTransform.GoInit(
                 stations = stations,
                 filter = filter,
@@ -191,11 +185,13 @@ class HomeViewModel @Inject constructor(
             )
         }
         else {
-            //val e: AppError = res.exceptionOrNull()
-                //?.let { AppError.DataBaseError(it) } ?: run { AppError.NotFound }
             val e = AppError.NotFound
-            Log.e(TAG, "refresh:e: $e")
-            return HomeTransform.GoInit(error = e)
+            Log.e(TAG, "refresh:e:---------------- $e")
+            return HomeTransform.GoInit(
+                filter = filter,
+                masters = masters,
+                error = e
+            )
         }
     }
 
@@ -206,8 +202,6 @@ class HomeViewModel @Inject constructor(
         } ?: run {
             setCurrentStation(Station.Empty)
             emit(HomeTransform.AddSideEffect(HomeSideEffect.GoMap))
-            android.util.Log.e("VM", "executeMap-------------------- FILTER")
-            //TODO: Go map with filter
         }
     }
 
@@ -216,7 +210,6 @@ class HomeViewModel @Inject constructor(
         navController: NavController,
         context: Context
     ) {
-        android.util.Log.e("AA", "consumeSideEffect-------- $sideEffect")
         when(sideEffect) {
             HomeSideEffect.Start -> {
                 navController.navigate(Page.Home.route)

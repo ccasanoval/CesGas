@@ -38,6 +38,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.max
 import com.cesoft.cesgas.R
 import com.cesoft.cesgas.ui.theme.CylinderShape
 import com.cesoft.cesgas.ui.theme.FontMed
@@ -163,7 +164,8 @@ private fun FilterList(
                 text = stringResource(R.string.select) + " $title",
                 fontWeight = FontWeight.Bold,
                 fontSize = FontMed,
-                modifier = Modifier.padding(start = SepMax*3)
+                maxLines = 2,
+                modifier = Modifier.padding(start = SepMax)
             )
             Row(
                 horizontalArrangement = Arrangement.End,
@@ -172,7 +174,7 @@ private fun FilterList(
                 Button(
                     onClick = onSave,
                     modifier = Modifier.padding(horizontal = SepMed)
-                ) { Text(text = stringResource(R.string.apply)) }
+                ) { Text(text = stringResource(R.string.apply), maxLines = 1) }
             }
         }
         LazyColumn(modifier = Modifier.fillMaxWidth().weight(.9f)) {

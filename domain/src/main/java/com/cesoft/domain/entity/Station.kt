@@ -11,6 +11,7 @@ data class Station(
     val hours: String,
     val title: String,
     val prices: Prices,
+    val workingPrice: Float = 0f
 //    val idStation: String,
 //    val idCity: String,
 //    val idProvince: String,

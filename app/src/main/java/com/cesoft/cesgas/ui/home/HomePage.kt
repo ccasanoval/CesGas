@@ -96,10 +96,6 @@ private fun Init(
     state: HomeState.Init,
     reduce: (HomeIntent) -> Unit
 ) {
-    android.util.Log.e("AAA", "Init------------------- prod ${state.masters.products.size}")
-    android.util.Log.e("AAA", "Init------------------- stat ${state.masters.states.size}")
-    android.util.Log.e("AAA", "Init------------------- prov ${state.masters.provinces.size}")
-    android.util.Log.e("AAA", "Init------------------- coun ${state.masters.counties.size}")
     Column {
         if(state.wait) LoadingCompo(background = false)
 
@@ -133,7 +129,9 @@ private fun HeaderError(
         Text(
             text = text,
             color = MaterialTheme.colorScheme.inversePrimary,
-            modifier = Modifier.padding(start = SepMax).weight(.5f)
+            modifier = Modifier
+                .padding(start = SepMax)
+                .weight(.5f)
         )
         IconButton(onClick = { isErrorVisible.value = false }) {
             Icon(
@@ -184,10 +182,10 @@ private fun HeaderFilter(
         }
     }
     if(isVisible) {
+        val isProductVisible = remember { mutableStateOf(false) }
         val isStateVisible = remember { mutableStateOf(false) }
         val isProvinceVisible = remember { mutableStateOf(false) }
         val isCountyVisible = remember { mutableStateOf(false) }
-        val isCityVisible = remember { mutableStateOf(false) }
         val isZipCodeVisible = remember { mutableStateOf(false) }
 
         val products = mutableListOf<FilterField>()
@@ -210,7 +208,7 @@ private fun HeaderFilter(
         }
         val counties = mutableListOf<FilterField>()
         for(c in state.masters.counties) {
-            val selected = c.id == state.filter.province
+            val selected = c.id == state.filter.county
             val favorite = c.id == 4418 || c.id == 4326 || c.id == 4402 || c.id == 4354
                     || c.id == 7183 || c.id == 4277 //TODO: Delete when prefs in use
             counties.add(FilterField(c.id, c.name, selected, favorite))
@@ -219,7 +217,7 @@ private fun HeaderFilter(
             /// PRODUCT FILTER
             FilterCompo(
                 stringResource(R.string.product),
-                isCityVisible,
+                isProductVisible,
                 FilterOptions(products),
                 unique = true
             ) {
@@ -251,6 +249,9 @@ private fun HeaderFilter(
                 }
                 /// COUNTY FILTER
                 if(state.filter.province != null) {
+                    android.util.Log.e("AAA", "----------------- ${state.filter.province} / ${state.filter.county} / ${counties.size}")
+                    for(c in counties)
+                        android.util.Log.e("AAA", "----------------- $c")
                     FilterCompo(
                         stringResource(R.string.county),
                         isCountyVisible,

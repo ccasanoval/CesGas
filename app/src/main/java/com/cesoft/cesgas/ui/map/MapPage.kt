@@ -43,7 +43,8 @@ fun MapPage(
                     context = context,
                     mapView = mapView,
                     stations = state.stations,
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
+                    productType = state.filter.productType
                 )
             }
         }

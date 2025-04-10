@@ -4,12 +4,18 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.drawable.Drawable
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.viewinterop.AndroidView
+import com.cesoft.cesgas.R
+import com.cesoft.domain.entity.ProductType
 import com.cesoft.domain.entity.Station
 import org.osmdroid.config.Configuration
 import org.osmdroid.util.BoundingBox
@@ -26,6 +32,7 @@ fun MapCompo(
     mapView: MapView,
     modifier: Modifier = Modifier,
     stations: List<Station>,
+    productType: ProductType?,
     doZoom: Boolean = false
 ) {
     //Without Scaffold the osmdroid map draws outside its AndroidView limits
@@ -41,15 +48,40 @@ fun MapCompo(
             view.overlays.add(locationOverlay)
             view.controller.setCenter(locationOverlay.myLocation)
 
-            val icon = context.getDrawable(android.R.drawable.star_big_on)
-            val ss = stations.filter { it.location.latitude != 0.0 && it.location.latitude != 0.0 }
+            var ss = stations.filter { it.location.latitude != 0.0 && it.location.latitude != 0.0 }
+            ss = when(productType) {
+                ProductType.G95 -> ss.map { it.copy(workingPrice = it.prices.G95 ?: 0f) }
+                ProductType.G98 -> ss.map { it.copy(workingPrice = it.prices.G98 ?: 0f) }
+                ProductType.GOA -> ss.map { it.copy(workingPrice = it.prices.GOA ?: 0f) }
+                ProductType.GOB -> ss.map { it.copy(workingPrice = it.prices.GOB ?: 0f) }
+                ProductType.GOC -> ss.map { it.copy(workingPrice = it.prices.GOC ?: 0f) }
+                ProductType.GLP -> ss.map { it.copy(workingPrice = it.prices.GLP ?: 0f) }
+                ProductType.GOAP -> ss.map { it.copy(workingPrice = it.prices.GOAP ?: 0f) }
+                else -> ss.map { it.copy(workingPrice = it.prices.G95 ?: 0f) }
+            }
+            ss = ss.filter { it.workingPrice > 0 }.sortedBy { it.workingPrice }
+            val MAX_STATIONS = 10
+            ss = ss.subList(0, MAX_STATIONS)
+
+            val maxPrice = ss.maxOf { it.workingPrice }
+            val minPrice = ss.minOf { it.workingPrice }
+            val threePart = (maxPrice - minPrice)/3
+
             ss.map { s ->
+                val icon =
+                    if(s.workingPrice < minPrice + threePart)
+                        context.getDrawable(android.R.drawable.btn_star_big_on)
+                    else if(s.workingPrice > maxPrice - threePart)
+                        context.getDrawable(android.R.drawable.ic_lock_lock)
+                    else
+                        context.getDrawable(android.R.drawable.ic_lock_idle_lock)
+                val snippet = context.getString(R.string.price) + s.workingPrice
                 addMarker(
                     mapView = view,
                     geoPoint = GeoPoint(s.location.latitude, s.location.longitude),
                     icon = icon,
-                    //title = s.title,
-                    //snippet = "Horario: " + s.hours +"\n Precios: "+s.prices.G95,
+                    title = s.title,
+                    snippet = snippet,
                     onClick = {
                         //TODO: Show info window
                         android.util.Log.e("AAA", "------------------ ${s.title} : ${s.hours} : ${s.prices.G95}")

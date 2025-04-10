@@ -76,14 +76,15 @@ class MapViewModel @Inject constructor(
     }
 
     private suspend fun fetch(): MapTransform.GoInit {
+        var filter: Filter = Filter.Empty
         var stations = getCurrentStation().getOrNull()?.let { listOf(it) } ?: listOf()
         if(stations.isEmpty() || stations[0] == Station.Empty) {
-            val filter = getFilter().getOrNull() ?: Filter()
+            filter = getFilter().getOrNull() ?: Filter()
             stations = filterStations(filter)
         }
-        android.util.Log.e(TAG, "fetch---------------------- ${stations.size} / $stations ///" + (stations[0] == Station.Empty))
-        android.util.Log.e(TAG, "fetch---------------------- ${stations[0].location}")
-        return MapTransform.GoInit(stations)
+        //android.util.Log.e(TAG, "fetch---------------------- ${stations.size} / $stations ///" + (stations[0] == Station.Empty))
+        //android.util.Log.e(TAG, "fetch---------------------- ${stations[0].location}")
+        return MapTransform.GoInit(stations, filter)
     }
 
     companion object {
