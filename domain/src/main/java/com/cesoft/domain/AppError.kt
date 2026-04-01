@@ -2,25 +2,16 @@ package com.cesoft.domain
 
 sealed class AppError: Throwable() {
 
-    data object NoStateSelected: AppError() {
-        private fun readResolve(): Any = NoStateSelected
-    }
+    class NoProductSelected: AppError()
+    class NoStateSelected: AppError()
 
-    data object UnknownError: AppError() {
-        private fun readResolve(): Any = UnknownError
-    }
+    class UnknownError: AppError()
+    class NotFound: AppError()
 
     data class InternalError(val code: Int = 0, val msg: String = ""): AppError()
     data class NetworkException(val code: Int = 0, val msg: String = ""): AppError()
 
-    data object NotFound: AppError() {
-        private fun readResolve(): Any = NotFound
-    }
-
-    data class DataBaseError(val e: Throwable): AppError() {
-        private fun readResolve(): Any = DataBaseError(Throwable())
-    }
-
+    data class DataBaseError(val e: Throwable): AppError()
     data class FileError(val filename: String): AppError()
 
     companion object {

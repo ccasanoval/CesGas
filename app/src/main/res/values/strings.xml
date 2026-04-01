@@ -5,6 +5,7 @@
     <string name="station_list">Estaciones de %s con %s</string>
 
     <!-- Errors -->
+    <string name="error_no_product_selected">Selecciona un producto en el filtro</string>
     <string name="error_no_state_selected">Selecciona una comunidad en el filtro</string>
     <string name="error_unknown">Error desconocido</string>
     <string name="error_not_found">No hay datos</string>
@@ -15,13 +16,14 @@
     <string name="apply">Aplicar</string>
     <string name="back">Volver</string>
     <string name="close">Cerrar</string>
+    <string name="refresh">Recargar</string>
     <string name="delete">Eliminar</string>
     <string name="show_filter">Ver filtro</string>
     <string name="hide_filter">Cerrar filtro</string>
     <string name="map">Mapa</string>
 
     <!-- Location -->
-    <string name="state">Autonomía</string>
+    <string name="state">Comunidad</string>
     <string name="province">Provincia</string>
     <string name="county">Municipio</string>
     <string name="city">Localidad</string>

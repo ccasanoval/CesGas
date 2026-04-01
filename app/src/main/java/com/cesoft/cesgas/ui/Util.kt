@@ -13,5 +13,6 @@ class Util(private var context: Context) {
 fun Throwable.message(context: Context) = when(this) {
     is AppError.NotFound -> context.getString(R.string.error_not_found)
     is AppError.NoStateSelected -> context.getString(R.string.error_no_state_selected)
+    is AppError.NoProductSelected -> context.getString(R.string.error_no_product_selected)
     else -> context.getString(R.string.error_unknown)
 }

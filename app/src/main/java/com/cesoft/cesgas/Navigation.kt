@@ -1,5 +1,5 @@
 package com.cesoft.cesgas
-
+/*
 import androidx.compose.runtime.Composable
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.SavedStateHandle
@@ -36,3 +36,4 @@ fun PageNavigation() {
         }
     }
 }
+*/

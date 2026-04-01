@@ -1,12 +1,13 @@
-package com.cesoft.cesgas.ui.home.mvi
+package com.cesoft.cesgas.ui.home
 
-import com.adidas.mvi.LoggableState
+import com.cesoft.cesgas.ui.home.HomeIntent
 import com.cesoft.domain.entity.AddressCounty
 import com.cesoft.domain.entity.AddressProvince
 import com.cesoft.domain.entity.AddressState
 import com.cesoft.domain.entity.Filter
 import com.cesoft.domain.entity.ProductType
 import com.cesoft.domain.entity.Station
+import com.slack.circuit.runtime.CircuitUiState
 
 data class Masters(
     val products: List<ProductType>,
@@ -19,13 +20,14 @@ data class Masters(
     }
 }
 
-sealed class HomeState: LoggableState {
-    data object Loading: HomeState()
-    data class Init(
+sealed class HomeState/*(val eventSink: (HomeIntent) -> Unit)*/: CircuitUiState {
+    data class Loading(val onEvent: (HomeIntent) -> Unit) : HomeState()
+    data class Success(
         val stations: List<Station> = listOf(),
         val filter: Filter = Filter.Empty,
         val masters: Masters = Masters.Empty,
-        val wait: Boolean = false,
-        val error: Throwable? = null
+        //val wait: Boolean = false,
+        val error: Throwable? = null,
+        val onEvent: (HomeIntent) -> Unit = {}
     ): HomeState()
 }

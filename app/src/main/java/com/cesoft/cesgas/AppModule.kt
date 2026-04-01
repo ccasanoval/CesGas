@@ -2,12 +2,16 @@ package com.cesoft.cesgas
 
 import android.content.Context
 import com.cesoft.cesgas.ui.Util
+import com.cesoft.data.Repository
+import com.cesoft.data.prefs.PrefDataSource
+import com.cesoft.data.remote.RemoteDataSource
+import com.cesoft.domain.repository.RepositoryContract
+import com.cesoft.domain.usecase.GetStatesUC
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import kotlinx.coroutines.DelicateCoroutinesApi
 import javax.inject.Singleton
 
 @Module
@@ -22,13 +26,13 @@ object AppModule {
     @Provides
     fun provideUtil(@ApplicationContext appContext: Context) = Util(appContext)
 
-//    @OptIn(DelicateCoroutinesApi::class)
+//
 //    @Singleton
 //    @Provides
-//    fun provideSharedLocationManager(
-//        @ApplicationContext appContext: Context
-//    ): SharedLocationManager {
-//        val scope = (appContext as App).applicationScope
-//        return SharedLocationManager(appContext, scope)
+//    fun provideGetStatesUC(
+//        repository: RepositoryContract
+//    ): GetStatesUC {
+//        return GetStatesUC(repository)
 //    }
+
 }

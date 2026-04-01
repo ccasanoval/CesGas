@@ -4,6 +4,8 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.drawable.Drawable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -13,9 +15,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.viewinterop.AndroidView
 import com.cesoft.cesgas.R
+import com.cesoft.cesgas.ui.theme.SepMax
 import com.cesoft.domain.entity.ProductType
 import com.cesoft.domain.entity.Station
 import org.osmdroid.config.Configuration
@@ -33,18 +37,22 @@ fun MapCompo(
     mapView: MapView,
     modifier: Modifier = Modifier,
     stations: List<Station>,
-    productType: ProductType?,
-    doZoom: Boolean = false
+    productType: ProductType?
 ) {
     //Without Scaffold the osmdroid map draws outside its AndroidView limits
     val selectedStation = remember { mutableStateOf<Station?>(null) }
 
+    if(stations.size == 1) {
+        selectedStation.value = stations.first()
+    }
+
     Column {
         selectedStation.value?.let {
-            Text(" ************ ")
-            Text("${it.title}")
-            Text(stringResource(R.string.g95) + " : " + it.prices.G95 + "€")
-            Text(stringResource(R.string.goa) + " : " + it.prices.GOA + "€")
+            Column(modifier = Modifier.padding(SepMax)) {
+                Text(it.title)
+                Text(stringResource(R.string.g95) + " : " + it.prices.G95 + "€")
+                Text(stringResource(R.string.goa) + " : " + it.prices.GOA + "€")
+            }
         }
         Scaffold(modifier = modifier) { innerPadding ->
             AndroidView(
@@ -58,8 +66,9 @@ fun MapCompo(
                 view.overlays.add(locationOverlay)
                 view.controller.setCenter(locationOverlay.myLocation)
 
-                var ss =
-                    stations.filter { it.location.latitude != 0.0 && it.location.latitude != 0.0 }
+                var ss = stations.filter {
+                    it.location.latitude != 0.0 && it.location.latitude != 0.0
+                }
                 ss = when (productType) {
                     ProductType.G95 -> ss.map { it.copy(workingPrice = it.prices.G95 ?: 0f) }
                     ProductType.G98 -> ss.map { it.copy(workingPrice = it.prices.G98 ?: 0f) }
@@ -78,14 +87,14 @@ fun MapCompo(
                 val minPrice = ss.minOf { it.workingPrice }
                 val threePart = (maxPrice - minPrice) / 3
 
-                ss.map { s ->
-                    val icon =
-                        if (s.workingPrice < minPrice + threePart)
-                            context.getDrawable(android.R.drawable.btn_star_big_on)
-                        else if (s.workingPrice > maxPrice - threePart)
-                            context.getDrawable(android.R.drawable.ic_lock_lock)
-                        else
-                            context.getDrawable(android.R.drawable.ic_lock_idle_lock)
+                ss.forEach { s ->
+                    val icon = context.getDrawable(android.R.drawable.btn_star)
+                    if (s.workingPrice < minPrice + threePart)
+                        icon?.setTint(Color(0, 200, 0).toArgb())
+                    else if (s.workingPrice > maxPrice - threePart)
+                        icon?.setTint(Color(220, 220, 0).toArgb())
+                    else
+                        icon?.setTint(Color( 200, 0, 0).toArgb())
                     val snippet = context.getString(R.string.price) + s.workingPrice
                     addMarker(
                         mapView = view,
@@ -95,7 +104,7 @@ fun MapCompo(
                         snippet = snippet,
                         onClick = {
                             selectedStation.value = s
-android.util.Log.e("AAA", "on marker click---------- ${s.title} : ${s.hours} : ${s.prices.G95}")
+//android.util.Log.e("AAA", "on marker click---------- ${s.title} : ${s.hours} : ${s.prices.G95}")
                         }
                     )
                 }

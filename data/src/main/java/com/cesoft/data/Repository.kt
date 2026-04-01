@@ -43,7 +43,7 @@ class Repository(
         return if (res.isSuccess) {
             Result.success(res.getOrNull()?.map { it.toEntity() } ?: listOf())
         } else {
-            Result.failure(res.exceptionOrNull() ?: AppError.UnknownError)
+            Result.failure(res.exceptionOrNull() ?: AppError.UnknownError())
         }
     }
     override suspend fun getStates(): Result<List<AddressState>> {
@@ -51,7 +51,7 @@ class Repository(
         return if (res.isSuccess) {
             Result.success(res.getOrNull()?.map { it.toEntity() } ?: listOf())
         } else {
-            Result.failure(res.exceptionOrNull() ?: AppError.UnknownError)
+            Result.failure(res.exceptionOrNull() ?: AppError.UnknownError())
         }
     }
     override suspend fun getProvinces(id: Int): Result<List<AddressProvince>> {
@@ -61,7 +61,7 @@ class Repository(
             val provinces = res.getOrNull()?.map { it.toEntity() } ?: listOf()
             Result.success(provinces)
         } else {
-            Result.failure(res.exceptionOrNull() ?: AppError.UnknownError)
+            Result.failure(res.exceptionOrNull() ?: AppError.UnknownError())
         }
     }
     override suspend fun getCounties(id: Int): Result<List<AddressCounty>> {
@@ -69,7 +69,7 @@ class Repository(
         return if (res.isSuccess) {
             Result.success(res.getOrNull()?.map { it.toEntity() } ?: listOf())
         } else {
-            Result.failure(res.exceptionOrNull() ?: AppError.UnknownError)
+            Result.failure(res.exceptionOrNull() ?: AppError.UnknownError())
         }
     }
 
@@ -108,7 +108,7 @@ class Repository(
             val data = res.getOrNull()?.list?.map { it.toEntity() } ?: listOf()
             Result.success(data)
         } else {
-            Result.failure(res.exceptionOrNull() ?: AppError.UnknownError)
+            Result.failure(res.exceptionOrNull() ?: AppError.UnknownError())
         }
     }
     override suspend fun getByState(id: Int, productType: ProductType): Result<List<Station>> {
@@ -119,7 +119,7 @@ class Repository(
             val filtered = filterByType(productType, data)
             Result.success(filtered)
         } else {
-            Result.failure(res.exceptionOrNull() ?: AppError.UnknownError)
+            Result.failure(res.exceptionOrNull() ?: AppError.UnknownError())
         }
     }
 
@@ -130,7 +130,7 @@ class Repository(
             val data = res.getOrNull()?.list?.map { it.toEntity() } ?: listOf()
             Result.success(data)
         } else {
-            Result.failure(res.exceptionOrNull() ?: AppError.UnknownError)
+            Result.failure(res.exceptionOrNull() ?: AppError.UnknownError())
         }
     }
     override suspend fun getByProvince(id: Int, productType: ProductType): Result<List<Station>> {
@@ -141,7 +141,7 @@ class Repository(
             val filtered = filterByType(productType, data)
             Result.success(filtered)
         } else {
-            Result.failure(res.exceptionOrNull() ?: AppError.UnknownError)
+            Result.failure(res.exceptionOrNull() ?: AppError.UnknownError())
         }
     }
 
@@ -151,7 +151,7 @@ class Repository(
             val data = res.getOrNull()?.list?.map { it.toEntity() } ?: listOf()
             Result.success(data)
         } else {
-            Result.failure(res.exceptionOrNull() ?: AppError.UnknownError)
+            Result.failure(res.exceptionOrNull() ?: AppError.UnknownError())
         }
     }
     override suspend fun getByCounty(id: Int, productType: ProductType): Result<List<Station>> {
@@ -161,7 +161,7 @@ class Repository(
             val filtered = filterByType(productType, data)
             Result.success(filtered)
         } else {
-            Result.failure(res.exceptionOrNull() ?: AppError.UnknownError)
+            Result.failure(res.exceptionOrNull() ?: AppError.UnknownError())
         }
     }
 

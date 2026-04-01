@@ -155,7 +155,7 @@ data class StationDataDto(
         val goap = goAP?.replace(',','.')?.toFloatOrNull()
         val glp = glp?.replace(',','.')?.toFloatOrNull()
 
-        //android.util.Log.e("Prices", "Prices------------${this.title} : ${this.g95e5} / ${this.g95e10} / ${this.g95e5P} == $g95 \n\n")
+        //android.util.Log.e("Prices", "Prices------------${this.title} : goa=$goa goap=$goap gob=$gob  /// 95=${this.g95e5} / ${this.g95e10} / ${this.g95e5P} == $g95 \n\n")
         return Prices(G95 = g95, G98 = g98, GOA = goa, GOB = gob, GOC = goc, GOAP = goap, GLP = glp)
     }
 
