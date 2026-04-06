@@ -43,7 +43,7 @@ class MainActivity : ComponentActivity() {
                         homePresenter
                     }
                     is MapScreen -> {
-                        //mapPresenter.navigator = navigator
+                        mapPresenter.navigator = navigator
                         mapPresenter
                     }
                     else -> null

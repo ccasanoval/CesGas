@@ -44,6 +44,7 @@ fun MapScreen(state: MapState) {
                     mapView = mapView,
                     stations = state.stations,
                     modifier = Modifier.fillMaxSize(),
+                    onEvent = { state.onEvent(MapIntent.Close) },
                     productType = state.filter.productType
                 )
             }

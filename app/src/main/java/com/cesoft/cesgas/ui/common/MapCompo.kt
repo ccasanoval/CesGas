@@ -4,19 +4,25 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.drawable.Drawable
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.cesoft.cesgas.R
 import com.cesoft.cesgas.ui.theme.SepMax
@@ -36,6 +42,7 @@ fun MapCompo(
     context : Context,
     mapView: MapView,
     modifier: Modifier = Modifier,
+    onEvent: () -> Unit,
     stations: List<Station>,
     productType: ProductType?
 ) {
@@ -47,11 +54,24 @@ fun MapCompo(
     }
 
     Column {
-        selectedStation.value?.let {
-            Column(modifier = Modifier.padding(SepMax)) {
-                Text(it.title)
-                Text(stringResource(R.string.g95) + " : " + it.prices.G95 + "€")
-                Text(stringResource(R.string.goa) + " : " + it.prices.GOA + "€")
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onEvent) {
+                Icon(
+                    painter = painterResource(R.mipmap.arrow_back),
+                    contentDescription = stringResource(R.string.back),
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+            Text(
+                text = stringResource(R.string.map),
+                fontWeight = FontWeight.Bold
+            )
+            selectedStation.value?.let {
+                Column(modifier = Modifier.padding(SepMax)) {
+                    Text(it.title)
+                    Text(stringResource(R.string.g95) + " : " + it.prices.G95 + "€")
+                    Text(stringResource(R.string.goa) + " : " + it.prices.GOA + "€")
+                }
             }
         }
         Scaffold(modifier = modifier) { innerPadding ->
@@ -87,12 +107,13 @@ fun MapCompo(
                 val minPrice = ss.minOf { it.workingPrice }
                 val threePart = (maxPrice - minPrice) / 3
 
+                //https://fonts.google.com/icons
                 ss.forEach { s ->
-                    val icon = context.getDrawable(android.R.drawable.btn_star)
+                    val icon = context.getDrawable(R.mipmap.star_48dp)
                     if (s.workingPrice < minPrice + threePart)
                         icon?.setTint(Color(0, 200, 0).toArgb())
                     else if (s.workingPrice > maxPrice - threePart)
-                        icon?.setTint(Color(220, 220, 0).toArgb())
+                        icon?.setTint(Color(250, 150, 0).toArgb())
                     else
                         icon?.setTint(Color( 200, 0, 0).toArgb())
                     val snippet = context.getString(R.string.price) + s.workingPrice
