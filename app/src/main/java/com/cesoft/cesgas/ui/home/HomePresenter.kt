@@ -91,12 +91,15 @@ class HomePresenter @Inject constructor(
             provinces = getProvinces(state).getOrNull() ?: listOf()
         }
 
+        // FilterStationsUC already applies the zip code filter
         val res = filterStations(filter)
-        stations = res.filter { s ->
-            if(zipCode.isNotBlank()) { s.zipCode == zipCode } else true
+        stations = res.getOrElse {
+            error = it
+            stations = listOf()
+            Log.e(TAG, "fetch:e:---------------- $error")
+            return
         }
         Log.e(TAG, "fetch:stations:---------------- ${stations.size}")
-        //TODO: Llega aqui pero no actualiza el estado...............................................................
         if(stations.isEmpty()) {
             error = AppError.NotFound()
             Log.e(TAG, "fetch:e:---------------- $error")

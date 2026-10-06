@@ -86,11 +86,15 @@ class MapPresenter @Inject constructor(
     }
 
     private suspend fun executeLoad() {
+        error = null
         stations = getCurrentStation().getOrNull()?.let { listOf(it) } ?: listOf()
         if(stations.isEmpty() || stations[0] == Station.Empty) {
-            error = AppError.NotFound()
             filter = getFilter().getOrNull() ?: Filter()
-            stations = filterStations(filter)
+            stations = filterStations(filter).getOrElse {
+                error = it
+                listOf()
+            }
+            if(error == null && stations.isEmpty()) error = AppError.NotFound()
         }
     }
 }

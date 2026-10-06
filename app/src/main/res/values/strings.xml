@@ -10,6 +10,7 @@
     <string name="error_unknown">Error desconocido</string>
     <string name="error_not_found">No hay datos</string>
     <string name="error_zip_code">El Código Postal no es correcto</string>
+    <string name="error_network">No se pudo conectar con el servidor. Comprueba tu conexión</string>
 
     <!-- Actions -->
     <string name="select">Selecciona</string>

@@ -6,11 +6,14 @@ import com.cesoft.domain.FakeRepository.Call
 import com.cesoft.domain.FakeRepository.Companion.station
 import com.cesoft.domain.entity.Filter
 import com.cesoft.domain.entity.ProductType
+import com.cesoft.domain.entity.Station
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import java.io.IOException
 
 class FilterStationsUCTest {
 
@@ -59,7 +62,7 @@ class FilterStationsUCTest {
     fun `no state returns empty list without calling the repository`() = runTest {
         val result = filterStations(Filter(productType = ProductType.G95, province = 46, county = 7183))
 
-        assertTrue(result.isEmpty())
+        assertEquals(listOf<Station>(), result.getOrThrow())
         assertTrue(repository.calls.isEmpty())
     }
 
@@ -80,7 +83,7 @@ class FilterStationsUCTest {
 
         val result = filterStations(Filter(state = 10, zipCode = "46520"))
 
-        assertEquals(listOf(2, 3), result.map { it.id })
+        assertEquals(listOf(2, 3), result.getOrThrow().map { it.id })
     }
 
     @Test
@@ -89,15 +92,26 @@ class FilterStationsUCTest {
 
         val result = filterStations(Filter(state = 10, zipCode = "  "))
 
-        assertEquals(2, result.size)
+        assertEquals(2, result.getOrThrow().size)
     }
 
     @Test
-    fun `repository failure returns empty list`() = runTest {
-        repository.stationsResult = Result.failure(AppError.NetworkException(500, "boom"))
+    fun `repository failure is propagated instead of returning an empty list`() = runTest {
+        val error = AppError.NetworkException(500, "boom")
+        repository.stationsResult = Result.failure(error)
 
         val result = filterStations(Filter(state = 10))
 
-        assertTrue(result.isEmpty())
+        assertSame(error, result.exceptionOrNull())
+    }
+
+    @Test
+    fun `repository failure is propagated when filtering by zip code`() = runTest {
+        val error = IOException("no connection")
+        repository.stationsResult = Result.failure(error)
+
+        val result = filterStations(Filter(state = 10, zipCode = "46520"))
+
+        assertSame(error, result.exceptionOrNull())
     }
 }

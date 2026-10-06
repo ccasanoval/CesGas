@@ -12,6 +12,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.cesoft.cesgas.R
 import com.cesoft.cesgas.ui.common.LoadingCompo
+import com.cesoft.cesgas.ui.message
 import com.cesoft.cesgas.ui.common.MapCompo
 import com.cesoft.cesgas.ui.common.rememberMapCompo
 import com.slack.circuit.runtime.screen.Screen
@@ -37,7 +38,7 @@ fun MapScreen(state: MapState) {
                     verticalArrangement = Arrangement.Center,
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    Text(text = stringResource(R.string.error_not_found))
+                    Text(text = state.error?.message(context) ?: stringResource(R.string.error_not_found))
                 }
             }
             else {
