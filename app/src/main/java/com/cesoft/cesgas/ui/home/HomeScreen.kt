@@ -66,14 +66,10 @@ data object HomeScreen : Screen
 fun HomeScreen(state: HomeState) {
     when(state) {
         is HomeState.Loading -> {
+            // The presenter starts loading by itself while in this state
             LoadingCompo()
-            // Fire once per Loading state, not on every recomposition
-            LaunchedEffect(Unit) { state.onEvent(HomeIntent.Load) }
         }
         is HomeState.Success -> {
-            android.util.Log.e("Screen", "MAIN---000--------s# ${state.stations.size} ")
-            android.util.Log.e("Screen", "MAIN---000--------f= ${state.filter} ")
-            android.util.Log.e("Screen", "MAIN---000--------e= ${state.error} ")
             Success(state = state, reduce = state.onEvent)
         }
     }

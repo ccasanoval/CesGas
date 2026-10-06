@@ -38,6 +38,10 @@ android {
     buildFeatures {
         compose = true
     }
+    testOptions {
+        // Compose runtime (presenter tests) calls android.os.Trace; return defaults instead of throwing
+        unitTests.isReturnDefaultValues = true
+    }
 
     buildFeatures.buildConfig = true
     flavorDimensions += "deploy"
@@ -69,6 +73,8 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.camera.camera2.pipe)
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.mockk)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
@@ -85,9 +91,10 @@ dependencies {
 //    implementation(libs.mvi)
 //    implementation(libs.mvi.compose)
     /// MVI : Slack Circuit
-    implementation("com.slack.circuit:circuit-foundation:0.31.0")//TODO: Si actualizas a 0.33.1 tendras que actulizar todo lo demas...
-    implementation("com.slack.circuit:circuit-runtime:0.31.0")
-    implementation("com.slack.circuit:circuit-overlay:0.31.0")
+    implementation(libs.circuit.foundation)//TODO: Si actualizas a 0.33.1 tendras que actulizar todo lo demas...
+    implementation(libs.circuit.runtime)
+    implementation(libs.circuit.overlay)
+    testImplementation(libs.circuit.test)
 
     /// Navigation
     implementation(libs.androidx.navigation.compose)

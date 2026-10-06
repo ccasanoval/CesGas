@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -25,9 +24,8 @@ data object MapScreen : Screen
 fun MapScreen(state: MapState) {
     when(state) {
         is MapState.Loading -> {
+            // The presenter starts loading by itself while in this state
             LoadingCompo()
-            // Fire once per Loading state, not on every recomposition
-            LaunchedEffect(Unit) { state.onEvent(MapIntent.Load) }
         }
         is MapState.Success -> {
             val context = LocalContext.current

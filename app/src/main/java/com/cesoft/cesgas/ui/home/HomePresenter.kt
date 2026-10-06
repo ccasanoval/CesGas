@@ -1,19 +1,14 @@
 package com.cesoft.cesgas.ui.home
 
-import android.util.Log
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import com.cesoft.cesgas.ui.common.FilterOptions
-import com.cesoft.cesgas.ui.home.HomeIntent
 import com.cesoft.cesgas.ui.map.MapScreen
 import com.cesoft.domain.AppError
-import com.cesoft.domain.entity.AddressCounty
-import com.cesoft.domain.entity.AddressProvince
-import com.cesoft.domain.entity.AddressState
 import com.cesoft.domain.entity.Filter
 import com.cesoft.domain.entity.ProductType
 import com.cesoft.domain.entity.Station
@@ -24,222 +19,133 @@ import com.cesoft.domain.usecase.GetProvincesUC
 import com.cesoft.domain.usecase.GetStatesUC
 import com.cesoft.domain.usecase.SetCurrentStationUC
 import com.cesoft.domain.usecase.SetFilterUC
+import com.slack.circuit.retained.rememberRetained
 import com.slack.circuit.runtime.Navigator
 import com.slack.circuit.runtime.presenter.Presenter
-import jakarta.inject.Inject
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
-class HomePresenter @Inject constructor(
-    var getFilter: GetFilterUC,
-    var setFilter: SetFilterUC,
-    var filterStations: FilterStationsUC,
-    var setCurrentStation: SetCurrentStationUC,
-    var getStates: GetStatesUC,
-    var getProvinces: GetProvincesUC,
-    var getCounties: GetCountiesUC
+/** Everything the screen shows once loaded */
+private data class HomeData(
+    val stations: List<Station> = listOf(),
+    val filter: Filter = Filter.Empty,
+    val masters: Masters = Masters.Empty,
+    val error: Throwable? = null,
+)
+
+class HomePresenter @AssistedInject constructor(
+    @Assisted private val navigator: Navigator,
+    private val getFilter: GetFilterUC,
+    private val setFilter: SetFilterUC,
+    private val filterStations: FilterStationsUC,
+    private val setCurrentStation: SetCurrentStationUC,
+    private val getStates: GetStatesUC,
+    private val getProvinces: GetProvincesUC,
+    private val getCounties: GetCountiesUC,
 ) : Presenter<HomeState> {
 
-    private var error: Throwable? = null
-    private var stations = listOf<Station>()
-    private var products = listOf<ProductType>()
-    private var states = listOf<AddressState>()
-    private var provinces = listOf<AddressProvince>()
-    private var counties = listOf<AddressCounty>()
-    private var filter = Filter(productType = ProductType.G95, state = 10, zipCode = "46520")//TODO: Prefs....
-
-    var navigator: Navigator ?= null
-
-    suspend fun fetch() {
-        products = listOf(
-            ProductType.G95, ProductType.G98, ProductType.GOA, ProductType.GOAP, ProductType.GLP
-        )
-        states = getStates().getOrNull() ?: listOf()
-        filter = getFilter().getOrNull() ?: Filter()
-        val county = filter.county
-        val province = filter.province
-        val state = filter.state
-        val productType = filter.productType
-        val zipCode = filter.zipCode
-
-        Log.e(TAG, "fetch---------------------------- ")
-        Log.e(TAG, "fetch------- FILTER PRODUC ------ $productType / ${products.size}")
-        Log.e(TAG, "fetch------- FILTER STATE ------ $state / ${states.size}")
-        Log.e(TAG, "fetch------- FILTER PROVIN ------ $province / ${provinces.size}")
-        Log.e(TAG, "fetch------- FILTER COUNTY ------ $county / ${counties.size}")
-        Log.e(TAG, "fetch------- FILTER ZIP CODE ------ $zipCode")
-
-        error = null
-        if(productType == null) {
-            error = AppError.NoProductSelected()
-            return
-        }
-        if(state == null) {
-            error = AppError.NoStateSelected()
-            return
-        }
-
-        if(county != null && province != null) {
-            provinces = getProvinces(state).getOrNull() ?: listOf()
-            counties = getCounties(province).getOrNull() ?: listOf()
-        }
-        else if(province != null) {
-            provinces = getProvinces(state).getOrNull() ?: listOf()
-            counties = getCounties(province).getOrNull() ?: listOf()
-        }
-        else {
-            provinces = getProvinces(state).getOrNull() ?: listOf()
-        }
-
-        // FilterStationsUC already applies the zip code filter
-        val res = filterStations(filter)
-        stations = res.getOrElse {
-            error = it
-            stations = listOf()
-            Log.e(TAG, "fetch:e:---------------- $error")
-            return
-        }
-        Log.e(TAG, "fetch:stations:---------------- ${stations.size}")
-        if(stations.isEmpty()) {
-            error = AppError.NotFound()
-            Log.e(TAG, "fetch:e:---------------- $error")
-        }
-    }
-
-    private suspend fun executeChangeProduct(filters: FilterOptions) {
-        val i = filters.getSelectedId() ?: 0
-        val productType = ProductType.entries[i]
-        filter = filter.copy(productType = productType)
-        setFilter(filter)
-    }
-    private suspend fun executeChangeState(options: FilterOptions) {
-        val idState = options.getSelectedId()
-        filter = filter.copy(state = idState, province = null, county = null)
-        setFilter(filter)
-    }
-    private suspend fun executeChangeProvince(options: FilterOptions) {
-        val idProvince = options.getSelectedId()
-        filter = filter.copy(province = idProvince, county = null)
-        setFilter(filter)
-    }
-    private suspend fun executeChangeCounty(options: FilterOptions) {
-        val idCounty = options.getSelectedId()
-        filter = filter.copy(county = idCounty)
-        setFilter(filter)
-    }
-    private suspend fun executeChangeZipCode(zipCode: String) {
-        filter = filter.copy(zipCode = zipCode)
-        setFilter(filter)
-    }
-
-    private suspend fun executeMap(station: Station?) {
-        station?.let {
-            setCurrentStation(station)
-            navigator?.goTo(MapScreen)
-        } ?: run {
-            setCurrentStation(Station.Empty)
-            navigator?.goTo(MapScreen)
-        }
+    @AssistedFactory
+    interface Factory {
+        fun create(navigator: Navigator): HomePresenter
     }
 
     @Composable
     override fun present(): HomeState {
-        android.util.Log.e(TAG, "present:------------------------------------------------")
         val coroutineScope = rememberCoroutineScope()
-        var isLoading by remember { mutableStateOf(true) }
+        // Retained: survives configuration changes, so rotating the device doesn't call the API again
+        var isLoading by rememberRetained { mutableStateOf(true) }
+        var data by rememberRetained { mutableStateOf(HomeData()) }
+
+        // Setting isLoading = true is what triggers a (re)load
+        if(isLoading) {
+            LaunchedEffect(Unit) {
+                data = withContext(Dispatchers.IO) { fetch() }
+                isLoading = false
+            }
+        }
+
+        // Persist the new filter first, so the reload reads it
+        val changeFilter: ((Filter) -> Filter) -> Unit = { transform ->
+            coroutineScope.launch {
+                setFilter(transform(data.filter))
+                isLoading = true
+            }
+        }
 
         val eventSink: (HomeIntent) -> Unit = { event ->
             when (event) {
-                is HomeIntent.Close -> {
-                    navigator?.pop()
+                is HomeIntent.Close -> navigator.pop()
+                is HomeIntent.Load -> isLoading = true
+                is HomeIntent.GoMap -> coroutineScope.launch {
+                    setCurrentStation(event.station ?: Station.Empty)
+                    navigator.goTo(MapScreen)
                 }
-                is HomeIntent.GoMap -> {
-                    coroutineScope.launch(Dispatchers.IO) {
-                        executeMap(event.station)
-                    }
+                is HomeIntent.ChangeProduct -> changeFilter {
+                    it.copy(productType = event.filters.getSelectedProductType())
                 }
-                is HomeIntent.Load -> {
-                    android.util.Log.e(TAG, "present------ is HomeIntent.Load ->")
-                    coroutineScope.launch(Dispatchers.IO) {
-                        isLoading = true
-                        fetch()
-                        isLoading = false
-                    }
+                is HomeIntent.ChangeAddressState -> changeFilter {
+                    it.copy(state = event.filters.getSelectedId(), province = null, county = null)
                 }
-                is HomeIntent.ChangeProduct -> {
-                    android.util.Log.e(TAG, "present------ is HomeIntent.ChangeProduct ->")
-                    coroutineScope.launch(Dispatchers.IO) {
-                        executeChangeProduct(event.filters)
-                        // Only after the filter is persisted, so the reload triggered by Loading reads it
-                        isLoading = true
-                    }
+                is HomeIntent.ChangeAddressProvince -> changeFilter {
+                    it.copy(province = event.filters.getSelectedId(), county = null)
                 }
-                is HomeIntent.ChangeAddressState -> {
-                    android.util.Log.e(TAG, "present------ is HomeIntent.ChangeAddressState ->")
-                    coroutineScope.launch(Dispatchers.IO) {
-                        executeChangeState(event.filters)
-                        // Only after the filter is persisted, so the reload triggered by Loading reads it
-                        isLoading = true
-                    }
+                is HomeIntent.ChangeAddressCounty -> changeFilter {
+                    it.copy(county = event.filters.getSelectedId())
                 }
-                is HomeIntent.ChangeAddressProvince -> {
-                    android.util.Log.e(TAG, "present------ is HomeIntent.ChangeAddressProvince ->")
-                    coroutineScope.launch(Dispatchers.IO) {
-                        executeChangeProvince(event.filters)
-                        // Only after the filter is persisted, so the reload triggered by Loading reads it
-                        isLoading = true
-                    }
-                }
-                is HomeIntent.ChangeAddressCounty -> {
-                    coroutineScope.launch(Dispatchers.IO) {
-                        executeChangeCounty(event.filters)
-                        // Only after the filter is persisted, so the reload triggered by Loading reads it
-                        isLoading = true
-                    }
-                }
-                is HomeIntent.ChangeAddressZipCode -> {
-                    coroutineScope.launch(Dispatchers.IO) {
-                        executeChangeZipCode(event.zipCode)
-                        // Only after the filter is persisted, so the reload triggered by Loading reads it
-                        isLoading = true
-                    }
+                is HomeIntent.ChangeAddressZipCode -> changeFilter {
+                    it.copy(zipCode = event.zipCode)
                 }
             }
         }
 
-//        LaunchedEffect(Unit) {
-//            lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-//                coroutineScope.launch(Dispatchers.IO) {
-//                    isLoading = true
-//                    state = fetch()
-//                }
-//            }
-//        }
-
-        return when {
-            isLoading -> {
-                android.util.Log.e(TAG, "present:Loading-------------------------- ${stations.size} / ${states.size}")
-                HomeState.Loading(onEvent = eventSink)
-            }
-            else -> {
-                android.util.Log.e(TAG, "present:Success-------------------------- e=$error / stations=${stations.size} / states=${states.size}")
-                HomeState.Success(
-                    stations = stations,
-                    filter = filter,
-                    masters = Masters(
-                        products = products,
-                        states = states,
-                        provinces = provinces,
-                        counties = counties
-                    ),
-                    error = error,
-                    onEvent = eventSink
-                )
-            }
+        return if(isLoading) {
+            HomeState.Loading(onEvent = eventSink)
+        } else {
+            HomeState.Success(
+                stations = data.stations,
+                filter = data.filter,
+                masters = data.masters,
+                error = data.error,
+                onEvent = eventSink
+            )
         }
     }
 
+    private suspend fun fetch(): HomeData {
+        val filter = getFilter().getOrNull() ?: Filter()
+        val states = getStates().getOrElse { return HomeData(filter = filter, error = it) }
+        var masters = Masters(products = PRODUCTS, states = states, provinces = listOf(), counties = listOf())
+
+        val state = filter.state
+            ?: return HomeData(filter = filter, masters = masters, error = AppError.NoStateSelected())
+        masters = masters.copy(
+            provinces = getProvinces(state).getOrNull() ?: listOf(),
+            counties = filter.province?.let { getCounties(it).getOrNull() } ?: listOf(),
+        )
+        if(filter.productType == null) {
+            return HomeData(filter = filter, masters = masters, error = AppError.NoProductSelected())
+        }
+
+        return filterStations(filter).fold(
+            onSuccess = { stations ->
+                val error = if(stations.isEmpty()) AppError.NotFound() else null
+                HomeData(stations = stations, filter = filter, masters = masters, error = error)
+            },
+            onFailure = { HomeData(filter = filter, masters = masters, error = it) }
+        )
+    }
+
+    /** Product filter options use the ProductType ordinal as id */
+    private fun FilterOptions.getSelectedProductType() =
+        getSelectedId()?.let { ProductType.entries.getOrNull(it) }
+
     companion object {
-        private const val TAG = "Presenter"
+        val PRODUCTS = listOf(
+            ProductType.G95, ProductType.G98, ProductType.GOA, ProductType.GOAP, ProductType.GLP
+        )
     }
 }

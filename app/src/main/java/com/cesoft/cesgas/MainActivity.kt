@@ -28,8 +28,8 @@ import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-    @Inject lateinit var homePresenter: HomePresenter
-    @Inject lateinit var mapPresenter: MapPresenter
+    @Inject lateinit var homePresenterFactory: HomePresenter.Factory
+    @Inject lateinit var mapPresenterFactory: MapPresenter.Factory
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,14 +38,9 @@ class MainActivity : ComponentActivity() {
         val circuit = Circuit.Builder()
             .addPresenterFactory { screen, navigator, _ ->
                 when (screen) {
-                    is HomeScreen -> {
-                        homePresenter.navigator = navigator
-                        homePresenter
-                    }
-                    is MapScreen -> {
-                        mapPresenter.navigator = navigator
-                        mapPresenter
-                    }
+                    // A new presenter per screen; its state lives in rememberRetained, not in the instance
+                    is HomeScreen -> homePresenterFactory.create(navigator)
+                    is MapScreen -> mapPresenterFactory.create(navigator)
                     else -> null
                 }
             }
