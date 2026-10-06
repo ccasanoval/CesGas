@@ -180,29 +180,27 @@ private fun HeaderFilter(
         val isZipCodeVisible = remember { mutableStateOf(false) }
 
         val products = mutableListOf<FilterField>()
-        android.util.Log.e("Screen", "-------------- select=${state.filter.productType} products = ${state.masters.products}")
         for(pt in state.masters.products) {
             val selected = pt == state.filter.productType
-            val favorite = pt == ProductType.G95//TODO: Delete when prefs in use-------------------------------
+            val favorite = pt in state.favorites.products
             products.add(FilterField(pt.ordinal, pt.name, selected, favorite))
         }
         val states = mutableListOf<FilterField>()
         for(s in state.masters.states) {
             val selected = s.id == state.filter.state
-            val favorite = s.id == 13 || s.id == 10//TODO: Delete when prefs in use
+            val favorite = s.id in state.favorites.states
             states.add(FilterField(s.id, s.name, selected, favorite))
         }
         val provinces = mutableListOf<FilterField>()
         for(p in state.masters.provinces) {
             val selected = p.id == state.filter.province
-            val favorite = p.id == 28 || p.id == 46//TODO: Delete when prefs in use
+            val favorite = p.id in state.favorites.provinces
             provinces.add(FilterField(p.id, p.name, selected, favorite))
         }
         val counties = mutableListOf<FilterField>()
         for(c in state.masters.counties) {
             val selected = c.id == state.filter.county
-            val favorite = c.id == 4418 || c.id == 4326 || c.id == 4402 || c.id == 4354
-                    || c.id == 7183 || c.id == 4277 //TODO: Delete when prefs in use
+            val favorite = c.id in state.favorites.counties
             counties.add(FilterField(c.id, c.name, selected, favorite))
         }
         Column {

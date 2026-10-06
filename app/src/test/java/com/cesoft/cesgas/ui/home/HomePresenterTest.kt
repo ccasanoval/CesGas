@@ -9,6 +9,7 @@ import com.cesoft.domain.AppError
 import com.cesoft.domain.entity.AddressCounty
 import com.cesoft.domain.entity.AddressProvince
 import com.cesoft.domain.entity.AddressState
+import com.cesoft.domain.entity.Favorites
 import com.cesoft.domain.entity.Filter
 import com.cesoft.domain.entity.ProductType
 import com.cesoft.domain.entity.Station
@@ -18,10 +19,12 @@ import com.cesoft.domain.usecase.GetByCountyUC
 import com.cesoft.domain.usecase.GetByProvinceUC
 import com.cesoft.domain.usecase.GetByStateUC
 import com.cesoft.domain.usecase.GetCountiesUC
+import com.cesoft.domain.usecase.GetFavoritesUC
 import com.cesoft.domain.usecase.GetFilterUC
 import com.cesoft.domain.usecase.GetProvincesUC
 import com.cesoft.domain.usecase.GetStatesUC
 import com.cesoft.domain.usecase.SetCurrentStationUC
+import com.cesoft.domain.usecase.SetFavoritesUC
 import com.cesoft.domain.usecase.SetFilterUC
 import com.slack.circuit.test.FakeNavigator
 import com.slack.circuit.test.test
@@ -49,6 +52,7 @@ class HomePresenterTest {
 
     /** The filter is stored as the real prefs would: what is set is what is read next */
     private var storedFilter = Filter(productType = ProductType.G95, state = 10)
+    private var storedFavorites = Favorites.Empty
 
     @Before
     fun setUp() {
@@ -56,6 +60,12 @@ class HomePresenterTest {
         coEvery { repository.getFilter() } answers { Result.success(storedFilter) }
         coEvery { repository.setFilter(capture(filterSlot)) } answers {
             storedFilter = filterSlot.captured
+            Result.success(Unit)
+        }
+        val favoritesSlot = slot<Favorites>()
+        coEvery { repository.getFavorites() } answers { Result.success(storedFavorites) }
+        coEvery { repository.setFavorites(capture(favoritesSlot)) } answers {
+            storedFavorites = favoritesSlot.captured
             Result.success(Unit)
         }
         coEvery { repository.setCurrentStation(any()) } returns Result.success(Unit)
@@ -71,6 +81,8 @@ class HomePresenterTest {
         navigator = navigator,
         getFilter = GetFilterUC(repository),
         setFilter = SetFilterUC(repository),
+        getFavorites = GetFavoritesUC(repository),
+        setFavorites = SetFavoritesUC(repository),
         filterStations = FilterStationsUC(
             GetByStateUC(repository), GetByProvinceUC(repository), GetByCountyUC(repository)
         ),
@@ -82,6 +94,63 @@ class HomePresenterTest {
 
     private fun options(vararg selectedIds: Int) =
         FilterOptions(selectedIds.map { FilterField(it, "Field $it", selected = true) })
+
+    @Test
+    fun `saved favorites are part of the state`() = runTest {
+        storedFavorites = Favorites(products = setOf(ProductType.GOA), states = setOf(13), provinces = setOf(46))
+
+        presenter().test {
+            assertEquals(storedFavorites, awaitState<HomeState.Success>().favorites)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `favorites are shown even when loading the stations fails`() = runTest {
+        storedFavorites = Favorites(states = setOf(13))
+        coEvery { repository.getByState(any(), any()) } returns Result.failure(IOException())
+
+        presenter().test {
+            assertEquals(storedFavorites, awaitState<HomeState.Success>().favorites)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `applying a filter saves the starred options and keeps favorites not shown`() = runTest {
+        // Madrid (28) is in another state, so it is not among the provinces shown now
+        storedFavorites = Favorites(provinces = setOf(28, 46))
+        val shown = FilterOptions(listOf(
+            FilterField(46, "Valencia", selected = true, favorite = false),// unstarred
+            FilterField(3, "Alicante"),
+            FilterField(12, "Castellón", favorite = true),// starred
+        ))
+
+        presenter().test {
+            awaitState<HomeState.Success>().onEvent(HomeIntent.ChangeAddressProvince(shown))
+
+            awaitState<HomeState.Loading>()
+            assertEquals(setOf(28, 12), awaitState<HomeState.Success>().favorites.provinces)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `starring a product saves it`() = runTest {
+        val shown = FilterOptions(listOf(
+            FilterField(ProductType.G95.ordinal, "G95", selected = true),
+            FilterField(ProductType.GLP.ordinal, "GLP", favorite = true),
+        ))
+
+        presenter().test {
+            awaitState<HomeState.Success>().onEvent(HomeIntent.ChangeProduct(shown))
+
+            awaitState<HomeState.Loading>()
+            awaitState<HomeState.Success>()
+            cancelAndIgnoreRemainingEvents()
+        }
+        assertEquals(setOf(ProductType.GLP), storedFavorites.products)
+    }
 
     @Test
     fun `starts loading and then shows the stations of the saved filter`() = runTest {

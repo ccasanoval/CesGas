@@ -1,9 +1,12 @@
 package com.cesoft.data.remote.result
 
+import android.util.Log
 import com.cesoft.domain.AppError
 import retrofit2.HttpException
 import retrofit2.Response
 import java.net.HttpURLConnection
+
+private const val TAG = "ApiExecutor"
 
 fun <T : Any> handleApi(
     execute: () -> Response<T>
@@ -11,26 +14,24 @@ fun <T : Any> handleApi(
     return try {
         val response = execute()
         val body = response.body()
-        val error = response.errorBody()?.string()
 
         if(response.isSuccessful && body != null) {
             Result.success(body)
         }
         else {
+            Log.w(TAG, "HTTP ${response.code()} ${response.message()}: ${response.errorBody()?.string()}")
             if(response.code() == HttpURLConnection.HTTP_INTERNAL_ERROR) {
-                android.util.Log.e("ApiExecutor","handleApi---HTTP_INTERNAL_ERROR---------- ${response.code()} : $error")
                 Result.failure(AppError.InternalError(code = response.code(), msg = response.message()))
             }
             else {
-                android.util.Log.e("ApiExecutor","handleApi---${response.code()}---------- ${response.code()} : $error")
                 Result.failure(AppError.NetworkException(code = response.code(), msg = response.message()))
             }
         }
     } catch(e: HttpException) {
-        android.util.Log.e("ApiExecutor","handleApi---HttpException---------- $e")
+        Log.w(TAG, "HTTP ${e.code()}", e)
         Result.failure(AppError.NetworkException(code = e.code(), msg = e.message()))
     } catch(t: Throwable) {
-        android.util.Log.e("ApiExecutor","handleApi---Throwable---------- $t")
-        Result.failure(AppError.NetworkException(code = t.hashCode(), msg = t.message ?: ""))
+        Log.w(TAG, "Request failed", t)
+        Result.failure(AppError.NetworkException(msg = t.message ?: ""))
     }
 }

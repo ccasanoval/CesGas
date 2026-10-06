@@ -10,6 +10,7 @@ import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
@@ -32,6 +33,15 @@ suspend fun Context.readString(key: String): String {
 //        pref[stringPreferencesKey(key)] ?: ""
 //    }
 //}
+
+suspend fun Context.writeStringSet(key: String, value: Set<String>) {
+    dataStore.edit { pref -> pref[stringSetPreferencesKey(key)] = value }
+}
+suspend fun Context.readStringSet(key: String): Set<String> {
+    return dataStore.data.map { pref ->
+        pref[stringSetPreferencesKey(key)] ?: setOf()
+    }.first()
+}
 
 suspend fun Context.writeDouble(key: String, value: Double) {
     dataStore.edit { pref -> pref[doublePreferencesKey(key)] = value }

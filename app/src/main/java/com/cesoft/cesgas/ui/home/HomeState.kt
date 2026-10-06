@@ -1,9 +1,9 @@
 package com.cesoft.cesgas.ui.home
 
-import com.cesoft.cesgas.ui.home.HomeIntent
 import com.cesoft.domain.entity.AddressCounty
 import com.cesoft.domain.entity.AddressProvince
 import com.cesoft.domain.entity.AddressState
+import com.cesoft.domain.entity.Favorites
 import com.cesoft.domain.entity.Filter
 import com.cesoft.domain.entity.ProductType
 import com.cesoft.domain.entity.Station
@@ -26,7 +26,7 @@ sealed class HomeState/*(val eventSink: (HomeIntent) -> Unit)*/: CircuitUiState 
         val stations: List<Station> = listOf(),
         val filter: Filter = Filter.Empty,
         val masters: Masters = Masters.Empty,
-        //val wait: Boolean = false,
+        val favorites: Favorites = Favorites.Empty,
         val error: Throwable? = null,
         val onEvent: (HomeIntent) -> Unit = {}
     ): HomeState()

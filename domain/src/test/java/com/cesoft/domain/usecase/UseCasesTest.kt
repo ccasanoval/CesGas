@@ -3,6 +3,7 @@ package com.cesoft.domain.usecase
 import com.cesoft.domain.FakeRepository
 import com.cesoft.domain.FakeRepository.Call
 import com.cesoft.domain.FakeRepository.Companion.station
+import com.cesoft.domain.entity.Favorites
 import com.cesoft.domain.entity.Filter
 import com.cesoft.domain.entity.ProductType
 import kotlinx.coroutines.test.runTest
@@ -53,5 +54,14 @@ class UseCasesTest {
         SetCurrentStationUC(repository)(station)
 
         assertEquals(station, GetCurrentStationUC(repository)().getOrNull())
+    }
+
+    @Test
+    fun `SetFavoritesUC and GetFavoritesUC round trip`() = runTest {
+        val favorites = Favorites(products = setOf(ProductType.GOA), states = setOf(10, 13), counties = setOf(7183))
+
+        SetFavoritesUC(repository)(favorites)
+
+        assertEquals(favorites, GetFavoritesUC(repository)().getOrNull())
     }
 }

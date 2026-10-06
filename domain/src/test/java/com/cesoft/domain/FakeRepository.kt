@@ -3,6 +3,7 @@ package com.cesoft.domain
 import com.cesoft.domain.entity.AddressCounty
 import com.cesoft.domain.entity.AddressProvince
 import com.cesoft.domain.entity.AddressState
+import com.cesoft.domain.entity.Favorites
 import com.cesoft.domain.entity.Filter
 import com.cesoft.domain.entity.Location
 import com.cesoft.domain.entity.Prices
@@ -26,6 +27,14 @@ class FakeRepository(
         this.filter = filter
         return Result.success(Unit)
     }
+
+    var favorites = Favorites.Empty
+    override suspend fun getFavorites() = Result.success(favorites)
+    override suspend fun setFavorites(favorites: Favorites): Result<Unit> {
+        this.favorites = favorites
+        return Result.success(Unit)
+    }
+
     override suspend fun getCurrentStation() = Result.success(currentStation)
     override suspend fun setCurrentStation(station: Station): Result<Unit> {
         currentStation = station

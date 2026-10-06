@@ -119,7 +119,7 @@ class StationDataDtoTest {
             }
         """.trimIndent()
 
-        val station = Gson().fromJson(json, StationDto::class.java).list.single().toEntity()
+        val station = Gson().fromJson(json, StationDto::class.java).list!!.single().toEntity()
 
         assertEquals(15218, station.id)
         assertEquals("46500", station.zipCode)

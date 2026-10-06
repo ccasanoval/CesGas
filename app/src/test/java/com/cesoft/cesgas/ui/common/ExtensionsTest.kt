@@ -20,7 +20,7 @@ class ExtensionsTest {
     }
 
     @Test
-    fun `null price is shown as zero`() {
-        assertEquals("0 €", (null as Float?).toMoneyFormat(spain))
+    fun `null price is shown as a dash, not as zero`() {
+        assertEquals("— €", (null as Float?).toMoneyFormat(spain))
     }
 }

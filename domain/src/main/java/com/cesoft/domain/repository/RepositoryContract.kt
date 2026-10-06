@@ -3,6 +3,7 @@ package com.cesoft.domain.repository
 import com.cesoft.domain.entity.AddressCounty
 import com.cesoft.domain.entity.AddressProvince
 import com.cesoft.domain.entity.AddressState
+import com.cesoft.domain.entity.Favorites
 import com.cesoft.domain.entity.Filter
 import com.cesoft.domain.entity.Product
 import com.cesoft.domain.entity.ProductType
@@ -13,6 +14,8 @@ interface RepositoryContract {
     // PREFS
     suspend fun getFilter(): Result<Filter>
     suspend fun setFilter(filter: Filter): Result<Unit>
+    suspend fun getFavorites(): Result<Favorites>
+    suspend fun setFavorites(favorites: Favorites): Result<Unit>
 
     // CURRENT STATION
     suspend fun getCurrentStation(): Result<Station>

@@ -9,15 +9,18 @@ import androidx.compose.runtime.setValue
 import com.cesoft.cesgas.ui.common.FilterOptions
 import com.cesoft.cesgas.ui.map.MapScreen
 import com.cesoft.domain.AppError
+import com.cesoft.domain.entity.Favorites
 import com.cesoft.domain.entity.Filter
 import com.cesoft.domain.entity.ProductType
 import com.cesoft.domain.entity.Station
 import com.cesoft.domain.usecase.FilterStationsUC
 import com.cesoft.domain.usecase.GetCountiesUC
+import com.cesoft.domain.usecase.GetFavoritesUC
 import com.cesoft.domain.usecase.GetFilterUC
 import com.cesoft.domain.usecase.GetProvincesUC
 import com.cesoft.domain.usecase.GetStatesUC
 import com.cesoft.domain.usecase.SetCurrentStationUC
+import com.cesoft.domain.usecase.SetFavoritesUC
 import com.cesoft.domain.usecase.SetFilterUC
 import com.slack.circuit.retained.rememberRetained
 import com.slack.circuit.runtime.Navigator
@@ -34,6 +37,7 @@ private data class HomeData(
     val stations: List<Station> = listOf(),
     val filter: Filter = Filter.Empty,
     val masters: Masters = Masters.Empty,
+    val favorites: Favorites = Favorites.Empty,
     val error: Throwable? = null,
 )
 
@@ -41,6 +45,8 @@ class HomePresenter @AssistedInject constructor(
     @Assisted private val navigator: Navigator,
     private val getFilter: GetFilterUC,
     private val setFilter: SetFilterUC,
+    private val getFavorites: GetFavoritesUC,
+    private val setFavorites: SetFavoritesUC,
     private val filterStations: FilterStationsUC,
     private val setCurrentStation: SetCurrentStationUC,
     private val getStates: GetStatesUC,
@@ -68,9 +74,10 @@ class HomePresenter @AssistedInject constructor(
             }
         }
 
-        // Persist the new filter first, so the reload reads it
-        val changeFilter: ((Filter) -> Filter) -> Unit = { transform ->
+        // Persist the new filter (and the options starred in the filter dialog) first, so the reload reads them
+        val changeFilter: ((Favorites) -> Favorites, (Filter) -> Filter) -> Unit = { updateFavorites, transform ->
             coroutineScope.launch {
+                setFavorites(updateFavorites(data.favorites))
                 setFilter(transform(data.filter))
                 isLoading = true
             }
@@ -84,21 +91,26 @@ class HomePresenter @AssistedInject constructor(
                     setCurrentStation(event.station ?: Station.Empty)
                     navigator.goTo(MapScreen)
                 }
-                is HomeIntent.ChangeProduct -> changeFilter {
-                    it.copy(productType = event.filters.getSelectedProductType())
-                }
-                is HomeIntent.ChangeAddressState -> changeFilter {
-                    it.copy(state = event.filters.getSelectedId(), province = null, county = null)
-                }
-                is HomeIntent.ChangeAddressProvince -> changeFilter {
-                    it.copy(province = event.filters.getSelectedId(), county = null)
-                }
-                is HomeIntent.ChangeAddressCounty -> changeFilter {
-                    it.copy(county = event.filters.getSelectedId())
-                }
-                is HomeIntent.ChangeAddressZipCode -> changeFilter {
-                    it.copy(zipCode = event.zipCode)
-                }
+                is HomeIntent.ChangeProduct -> changeFilter(
+                    { it.copy(products = it.products.updatedWith(event.filters) { id -> ProductType.entries.getOrNull(id) }) },
+                    { it.copy(productType = event.filters.getSelectedProductType()) }
+                )
+                is HomeIntent.ChangeAddressState -> changeFilter(
+                    { it.copy(states = it.states.updatedWith(event.filters) { id -> id }) },
+                    { it.copy(state = event.filters.getSelectedId(), province = null, county = null) }
+                )
+                is HomeIntent.ChangeAddressProvince -> changeFilter(
+                    { it.copy(provinces = it.provinces.updatedWith(event.filters) { id -> id }) },
+                    { it.copy(province = event.filters.getSelectedId(), county = null) }
+                )
+                is HomeIntent.ChangeAddressCounty -> changeFilter(
+                    { it.copy(counties = it.counties.updatedWith(event.filters) { id -> id }) },
+                    { it.copy(county = event.filters.getSelectedId()) }
+                )
+                is HomeIntent.ChangeAddressZipCode -> changeFilter(
+                    { it },
+                    { it.copy(zipCode = event.zipCode) }
+                )
             }
         }
 
@@ -109,13 +121,18 @@ class HomePresenter @AssistedInject constructor(
                 stations = data.stations,
                 filter = data.filter,
                 masters = data.masters,
+                favorites = data.favorites,
                 error = data.error,
                 onEvent = eventSink
             )
         }
     }
 
-    private suspend fun fetch(): HomeData {
+    private suspend fun fetch(): HomeData = fetchStations().copy(
+        favorites = getFavorites().getOrNull() ?: Favorites.Empty
+    )
+
+    private suspend fun fetchStations(): HomeData {
         val filter = getFilter().getOrNull() ?: Filter()
         val states = getStates().getOrElse { return HomeData(filter = filter, error = it) }
         var masters = Masters(products = PRODUCTS, states = states, provinces = listOf(), counties = listOf())
@@ -137,6 +154,16 @@ class HomePresenter @AssistedInject constructor(
             },
             onFailure = { HomeData(filter = filter, masters = masters, error = it) }
         )
+    }
+
+    /**
+     * The options only show part of the favorites (e.g. the provinces of the selected state):
+     * keep the ones not shown and take the starred state of the shown ones
+     */
+    private fun <T> Set<T>.updatedWith(options: FilterOptions, toItem: (Int) -> T?): Set<T> {
+        val shown = options.fields.mapNotNull { toItem(it.id) }.toSet()
+        val starred = options.fields.filter { it.favorite }.mapNotNull { toItem(it.id) }.toSet()
+        return this - shown + starred
     }
 
     /** Product filter options use the ProductType ordinal as id */

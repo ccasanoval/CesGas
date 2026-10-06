@@ -26,7 +26,6 @@ class RemoteDataSource(
 
     init {
         apiService = api ?: getRetrofit(API).create(ApiService::class.java)
-        android.util.Log.e("RemoteDS", "API:--------------------------------------- $API")
     }
 
     class GasInterceptor : Interceptor {
@@ -41,8 +40,9 @@ class RemoteDataSource(
         val httpClient = OkHttpClient.Builder()
             .addInterceptor(GasInterceptor())
         if (BuildConfig.DEBUG) {
+            // BASIC (method, URL, code, time): logging BODY of multi-MB station lists slows debug builds a lot
             val logging = HttpLoggingInterceptor()
-            logging.setLevel(HttpLoggingInterceptor.Level.BODY)
+            logging.setLevel(HttpLoggingInterceptor.Level.BASIC)
             httpClient.addInterceptor(logging)
         }
         httpClient.cache(Cache(context.cacheDir, 1024 * 1024 * 2L))
