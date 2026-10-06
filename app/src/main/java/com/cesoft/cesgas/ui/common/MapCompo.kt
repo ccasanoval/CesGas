@@ -4,6 +4,8 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.graphics.drawable.Drawable
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -33,6 +35,7 @@ import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.createBitmap
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -50,6 +53,7 @@ import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
 
 private const val SINGLE_STATION_ZOOM = 17.0
 private const val ZOOM_BORDER_PX = 100
+private val MY_LOCATION_COLOR = Color(0, 100, 220)
 private val LOCATION_PERMISSIONS = arrayOf(
     Manifest.permission.ACCESS_FINE_LOCATION,
     Manifest.permission.ACCESS_COARSE_LOCATION,
@@ -166,7 +170,13 @@ private fun showStations(
 @Composable
 private fun rememberLocationOverlay(context: Context, mapView: MapView): MyLocationNewOverlay {
     val overlay = remember(mapView) {
-        MyLocationNewOverlay(GpsMyLocationProvider(context), mapView).also { mapView.overlays.add(it) }
+        MyLocationNewOverlay(GpsMyLocationProvider(context), mapView).also { overlay ->
+            // osmdroid's default direction arrow is white: almost invisible over the light OSM tiles
+            ContextCompat.getDrawable(context, org.osmdroid.library.R.drawable.round_navigation_white_48)
+                ?.tintedBitmap(MY_LOCATION_COLOR)
+                ?.let { overlay.setDirectionIcon(it) }
+            mapView.overlays.add(overlay)
+        }
     }
     var isGranted by remember { mutableStateOf(hasLocationPermission(context)) }
     val launcher = rememberLauncherForActivityResult(
@@ -180,6 +190,17 @@ private fun rememberLocationOverlay(context: Context, mapView: MapView): MyLocat
         onDispose { overlay.disableMyLocation() }
     }
     return overlay
+}
+
+/** Draws the drawable with a tint (toBitmap() would return a BitmapDrawable's bitmap untinted) */
+private fun Drawable.tintedBitmap(color: Color): Bitmap {
+    val bitmap = createBitmap(intrinsicWidth, intrinsicHeight)
+    mutate().apply {
+        setTint(color.toArgb())
+        setBounds(0, 0, intrinsicWidth, intrinsicHeight)
+        draw(Canvas(bitmap))
+    }
+    return bitmap
 }
 
 private fun hasLocationPermission(context: Context) = LOCATION_PERMISSIONS.any {
