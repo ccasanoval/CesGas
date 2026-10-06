@@ -1,8 +1,12 @@
 package com.cesoft.cesgas.ui.common
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
@@ -13,8 +17,11 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -22,8 +29,13 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.cesoft.cesgas.R
 import com.cesoft.cesgas.ui.theme.SepMax
 import com.cesoft.domain.entity.ProductType
@@ -36,7 +48,13 @@ import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
 
-@SuppressLint("UseCompatLoadingForDrawables")
+private const val SINGLE_STATION_ZOOM = 17.0
+private const val ZOOM_BORDER_PX = 100
+private val LOCATION_PERMISSIONS = arrayOf(
+    Manifest.permission.ACCESS_FINE_LOCATION,
+    Manifest.permission.ACCESS_COARSE_LOCATION,
+)
+
 @Composable
 fun MapCompo(
     context : Context,
@@ -46,11 +64,14 @@ fun MapCompo(
     stations: List<Station>,
     productType: ProductType?
 ) {
-    //Without Scaffold the osmdroid map draws outside its AndroidView limits
-    val selectedStation = remember { mutableStateOf<Station?>(null) }
+    val mapStations = remember(stations, productType) { stationsForMap(stations, productType) }
+    // With a single station it is shown right away, otherwise the one whose marker is clicked
+    var selectedStation by remember(stations) { mutableStateOf(stations.singleOrNull()) }
+    val locationOverlay = rememberLocationOverlay(context, mapView)
 
-    if(stations.size == 1) {
-        selectedStation.value = stations.first()
+    // Only when the stations change, so recompositions (e.g. selecting one) don't reset the user's zoom
+    LaunchedEffect(mapView, mapStations) {
+        showStations(context, mapView, mapStations, locationOverlay) { selectedStation = it }
     }
 
     Column {
@@ -66,100 +87,129 @@ fun MapCompo(
                 text = stringResource(R.string.map),
                 fontWeight = FontWeight.Bold
             )
-            selectedStation.value?.let {
+            selectedStation?.let {
+                val type = mapProductType(productType)
                 Column(modifier = Modifier.padding(SepMax)) {
-                    Text(it.title)
-                    Text(stringResource(R.string.g95) + " : " + it.prices.G95 + "€")
-                    Text(stringResource(R.string.goa) + " : " + it.prices.GOA + "€")
+                    Text(it.title, fontWeight = FontWeight.Bold)
+                    Text(type.name + " : " + it.prices.of(type).toMoneyFormat(Locale.current.platformLocale))
+                    Text(it.hours)
                 }
             }
         }
+        //Without Scaffold the osmdroid map draws outside its AndroidView limits
         Scaffold(modifier = modifier) { innerPadding ->
             AndroidView(
                 factory = { mapView },
                 modifier = Modifier.padding(innerPadding)
-            ) { view ->
-                view.overlays.removeAll { true }
-
-                val locationOverlay = MyLocationNewOverlay(GpsMyLocationProvider(context), mapView)
-                locationOverlay.enableMyLocation()
-                view.overlays.add(locationOverlay)
-                view.controller.setCenter(locationOverlay.myLocation)
-
-                var ss = stations.filter {
-                    it.location.latitude != 0.0 && it.location.longitude != 0.0
-                }
-                ss = when (productType) {
-                    ProductType.G95 -> ss.map { it.copy(workingPrice = it.prices.G95 ?: 0f) }
-                    ProductType.G98 -> ss.map { it.copy(workingPrice = it.prices.G98 ?: 0f) }
-                    ProductType.GOA -> ss.map { it.copy(workingPrice = it.prices.GOA ?: 0f) }
-                    ProductType.GOB -> ss.map { it.copy(workingPrice = it.prices.GOB ?: 0f) }
-                    ProductType.GOC -> ss.map { it.copy(workingPrice = it.prices.GOC ?: 0f) }
-                    ProductType.GLP -> ss.map { it.copy(workingPrice = it.prices.GLP ?: 0f) }
-                    ProductType.GOAP -> ss.map { it.copy(workingPrice = it.prices.GOAP ?: 0f) }
-                    else -> ss.map { it.copy(workingPrice = it.prices.G95 ?: 0f) }
-                }
-                ss = ss.filter { it.workingPrice > 0 }.sortedBy { it.workingPrice }
-                val maxStations = 10
-                if (ss.size > maxStations) ss = ss.subList(0, maxStations)
-                if (ss.isEmpty()) return@AndroidView
-
-                val maxPrice = ss.maxOf { it.workingPrice }
-                val minPrice = ss.minOf { it.workingPrice }
-                val threePart = (maxPrice - minPrice) / 3
-
-                //https://fonts.google.com/icons
-                ss.forEach { s ->
-                    // mutate() so each marker gets its own tint instead of sharing the drawable state
-                    val icon = context.getDrawable(R.mipmap.star_48dp)?.mutate()
-                    if (s.workingPrice < minPrice + threePart)
-                        icon?.setTint(Color(0, 200, 0).toArgb())
-                    else if (s.workingPrice > maxPrice - threePart)
-                        icon?.setTint(Color(200, 0, 0).toArgb())
-                    else
-                        icon?.setTint(Color(250, 150, 0).toArgb())
-                    val snippet = context.getString(R.string.price) + s.workingPrice
-                    addMarker(
-                        mapView = view,
-                        geoPoint = GeoPoint(s.location.latitude, s.location.longitude),
-                        icon = icon,
-                        title = s.title,
-                        snippet = snippet,
-                        onClick = {
-                            selectedStation.value = s
-//android.util.Log.e("AAA", "on marker click---------- ${s.title} : ${s.hours} : ${s.prices.G95}")
-                        }
-                    )
-                }
-
-                view.addOnFirstLayoutListener { _, _, _, _, _ ->//v, left, top, right, bottom ->
-                    //if (points.isEmpty()) {
-                    //view.controller.setCenter(locationOverlay.myLocation)
-                    //location?.let { view.controller.setCenter(GeoPoint(it.latitude, it.longitude)) }
-                    //} else {
-                    val gps = ss.map { GeoPoint(it.location.latitude, it.location.longitude) }
-                    view.zoomToBoundingBox(BoundingBox.fromGeoPointsSafe(gps), false)
-                    //view.controller.setCenter(locationOverlay.myLocation)
-                    //}
-                    view.invalidate()
-                }
-            }
+            )
         }
     }
 }
 
+/** Replaces the station markers (keeping the location overlay) and zooms to show them */
+@SuppressLint("UseCompatLoadingForDrawables")
+private fun showStations(
+    context: Context,
+    view: MapView,
+    stations: List<Station>,
+    locationOverlay: MyLocationNewOverlay,
+    onClick: (Station) -> Unit,
+) {
+    view.overlays.removeAll { it is Marker }
+
+    val minPrice = stations.minOfOrNull { it.workingPrice } ?: 0f
+    val maxPrice = stations.maxOfOrNull { it.workingPrice } ?: 0f
+    //https://fonts.google.com/icons
+    stations.forEach { s ->
+        // mutate() so each marker gets its own tint instead of sharing the drawable state
+        val icon = context.getDrawable(R.mipmap.star_48dp)?.mutate()
+        val color = when(priceTier(s.workingPrice, minPrice, maxPrice)) {
+            PriceTier.CHEAP -> Color(0, 200, 0)
+            PriceTier.MEDIUM -> Color(250, 150, 0)
+            PriceTier.EXPENSIVE -> Color(200, 0, 0)
+        }
+        icon?.setTint(color.toArgb())
+        addMarker(
+            mapView = view,
+            geoPoint = GeoPoint(s.location.latitude, s.location.longitude),
+            icon = icon,
+            title = s.title,
+            snippet = context.getString(R.string.price) + s.workingPrice,
+            onClick = { onClick(s) }
+        )
+    }
+
+    val points = stations.map { GeoPoint(it.location.latitude, it.location.longitude) }
+    val zoom = {
+        when(points.size) {
+            // Nothing to show: center on the user as soon as there is a location fix
+            0 -> locationOverlay.runOnFirstFix {
+                view.post { locationOverlay.myLocation?.let { view.controller.animateTo(it) } }
+            }
+            1 -> {
+                view.controller.setZoom(SINGLE_STATION_ZOOM)
+                view.controller.setCenter(points.first())
+            }
+            else -> view.zoomToBoundingBox(BoundingBox.fromGeoPointsSafe(points), false, ZOOM_BORDER_PX)
+        }
+        view.invalidate()
+    }
+    // The first layout listener never fires if the map was already laid out
+    if(view.isLayoutOccurred) zoom()
+    else view.addOnFirstLayoutListener { _, _, _, _, _ -> zoom() }
+}
+
+/**
+ * A single "my location" overlay for the map's whole life. It asks for the location permission
+ * and only listens to the GPS while it is granted and the screen is on (see [rememberMapCompo]).
+ */
+@Composable
+private fun rememberLocationOverlay(context: Context, mapView: MapView): MyLocationNewOverlay {
+    val overlay = remember(mapView) {
+        MyLocationNewOverlay(GpsMyLocationProvider(context), mapView).also { mapView.overlays.add(it) }
+    }
+    var isGranted by remember { mutableStateOf(hasLocationPermission(context)) }
+    val launcher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { result -> isGranted = result.values.any { it } }
+    LaunchedEffect(Unit) {
+        if(!isGranted) launcher.launch(LOCATION_PERMISSIONS)
+    }
+    DisposableEffect(overlay, isGranted) {
+        if(isGranted) overlay.enableMyLocation()
+        onDispose { overlay.disableMyLocation() }
+    }
+    return overlay
+}
+
+private fun hasLocationPermission(context: Context) = LOCATION_PERMISSIONS.any {
+    ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
+}
+
+/** The MapView follows the screen lifecycle: tiles and GPS are paused while it is not visible */
 @Composable
 fun rememberMapCompo(context : Context): MapView {
-    val pack = context.packageName
-    val prefs = context.getSharedPreferences(pack+"OSM", Context.MODE_PRIVATE)
-    Configuration.getInstance().load(context, prefs)
-    val mapView = remember { MapView(context) }
-    DisposableEffect(Unit) {
+    val mapView = remember {
+        val prefs = context.getSharedPreferences(context.packageName + "OSM", Context.MODE_PRIVATE)
+        Configuration.getInstance().load(context, prefs)
+        MapView(context).also { initMap(it) }
+    }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner, mapView) {
+        val observer = LifecycleEventObserver { _, event ->
+            when(event) {
+                Lifecycle.Event.ON_RESUME -> mapView.onResume()
+                Lifecycle.Event.ON_PAUSE -> mapView.onPause()
+                else -> {}
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
             mapView.onDetach()
         }
     }
-    return mapView.apply { initMap(this) }
+    return mapView
 }
 
 private fun initMap(mapView: MapView) {

@@ -285,16 +285,7 @@ private fun Item(
     Row(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = modifier.weight(.1f)) {
             Row {
-                val price: Float? = when(product) {
-                    ProductType.G95 -> station.prices.G95
-                    ProductType.G98 -> station.prices.G98
-                    ProductType.GOA -> station.prices.GOA
-                    ProductType.GLP -> station.prices.GLP
-                    ProductType.GOB -> station.prices.GOB
-                    ProductType.GOC -> station.prices.GOC
-                    ProductType.GOAP -> station.prices.GOAP
-                    else -> null
-                }
+                val price = station.prices.of(product)
                 Text(
                     text = price.toMoneyFormat(Locale.current.platformLocale),
                     fontWeight = FontWeight.Bold,
