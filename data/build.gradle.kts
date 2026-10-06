@@ -30,6 +30,10 @@ android {
         targetCompatibility = JavaVersion.VERSION_21
     }
     //kotlinOptions { jvmTarget = "11" }
+    testOptions {
+        // android.util.Log is called from production code; return defaults instead of throwing in JVM tests
+        unitTests.isReturnDefaultValues = true
+    }
 
     buildFeatures.buildConfig = true
     flavorDimensions += "deploy"
@@ -54,6 +58,8 @@ dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.mockk)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 

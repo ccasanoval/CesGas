@@ -40,7 +40,7 @@ fun FilterZipCodeCompo(
     val input = remember { mutableStateOf(zipCode) }
     val error = remember { mutableStateOf("") }
     val txtTitle = stringResource(R.string.zip_code)
-    val txtError = stringResource(R.string.zip_code)
+    val txtError = stringResource(R.string.error_zip_code)
     if (isVisible.value) {
         Surface(shadowElevation = SepMin) {
             Row(

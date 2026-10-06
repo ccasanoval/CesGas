@@ -87,7 +87,7 @@ fun MapCompo(
                 view.controller.setCenter(locationOverlay.myLocation)
 
                 var ss = stations.filter {
-                    it.location.latitude != 0.0 && it.location.latitude != 0.0
+                    it.location.latitude != 0.0 && it.location.longitude != 0.0
                 }
                 ss = when (productType) {
                     ProductType.G95 -> ss.map { it.copy(workingPrice = it.prices.G95 ?: 0f) }
@@ -102,6 +102,7 @@ fun MapCompo(
                 ss = ss.filter { it.workingPrice > 0 }.sortedBy { it.workingPrice }
                 val maxStations = 10
                 if (ss.size > maxStations) ss = ss.subList(0, maxStations)
+                if (ss.isEmpty()) return@AndroidView
 
                 val maxPrice = ss.maxOf { it.workingPrice }
                 val minPrice = ss.minOf { it.workingPrice }
@@ -109,13 +110,14 @@ fun MapCompo(
 
                 //https://fonts.google.com/icons
                 ss.forEach { s ->
-                    val icon = context.getDrawable(R.mipmap.star_48dp)
+                    // mutate() so each marker gets its own tint instead of sharing the drawable state
+                    val icon = context.getDrawable(R.mipmap.star_48dp)?.mutate()
                     if (s.workingPrice < minPrice + threePart)
                         icon?.setTint(Color(0, 200, 0).toArgb())
                     else if (s.workingPrice > maxPrice - threePart)
-                        icon?.setTint(Color(250, 150, 0).toArgb())
+                        icon?.setTint(Color(200, 0, 0).toArgb())
                     else
-                        icon?.setTint(Color( 200, 0, 0).toArgb())
+                        icon?.setTint(Color(250, 150, 0).toArgb())
                     val snippet = context.getString(R.string.price) + s.workingPrice
                     addMarker(
                         mapView = view,

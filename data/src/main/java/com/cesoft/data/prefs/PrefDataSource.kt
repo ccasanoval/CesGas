@@ -34,7 +34,7 @@ class PrefDataSource(
             val county = context.readInt(PREFS_ID_COUNTY) ?: -1
             val zipCode = context.readString(PREFS_ZIP_CODE)
             return@withContext Filter(
-                productType = if(product > -1) ProductType.entries[product] else null,
+                productType = ProductType.entries.getOrNull(product),
                 state = if(state > -1) state else null,
                 province = if(province > -1) province else null,
                 county = if(county > -1) county else null,
@@ -122,8 +122,8 @@ class PrefDataSource(
         // CURRENT STATION
         private const val PREFS_CS_TITLE = "PREFS_CS_TITLE"
         private const val PREFS_CS_ADDRESS = "PREFS_CS_ADDRESS"
-        private const val PREFS_CS_LATITUDE = ""
-        private const val PREFS_CS_LONGITUDE = "PREFS_CS_LATITUDE"
+        private const val PREFS_CS_LATITUDE = "PREFS_CS_LATITUDE"
+        private const val PREFS_CS_LONGITUDE = "PREFS_CS_LONGITUDE"
         private const val PREFS_CS_HOURS = "PREFS_CS_HOURS"
         private const val PREFS_CS_G95 = "PREFS_CS_G95"
         private const val PREFS_CS_G98 = "PREFS_CS_G98"

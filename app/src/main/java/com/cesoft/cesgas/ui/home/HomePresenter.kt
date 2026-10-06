@@ -166,34 +166,39 @@ class HomePresenter @Inject constructor(
                 is HomeIntent.ChangeProduct -> {
                     android.util.Log.e(TAG, "present------ is HomeIntent.ChangeProduct ->")
                     coroutineScope.launch(Dispatchers.IO) {
-                        isLoading = true
                         executeChangeProduct(event.filters)
+                        // Only after the filter is persisted, so the reload triggered by Loading reads it
+                        isLoading = true
                     }
                 }
                 is HomeIntent.ChangeAddressState -> {
                     android.util.Log.e(TAG, "present------ is HomeIntent.ChangeAddressState ->")
                     coroutineScope.launch(Dispatchers.IO) {
-                        isLoading = true
                         executeChangeState(event.filters)
+                        // Only after the filter is persisted, so the reload triggered by Loading reads it
+                        isLoading = true
                     }
                 }
                 is HomeIntent.ChangeAddressProvince -> {
                     android.util.Log.e(TAG, "present------ is HomeIntent.ChangeAddressProvince ->")
                     coroutineScope.launch(Dispatchers.IO) {
-                        isLoading = true
                         executeChangeProvince(event.filters)
+                        // Only after the filter is persisted, so the reload triggered by Loading reads it
+                        isLoading = true
                     }
                 }
                 is HomeIntent.ChangeAddressCounty -> {
                     coroutineScope.launch(Dispatchers.IO) {
-                        isLoading = true
                         executeChangeCounty(event.filters)
+                        // Only after the filter is persisted, so the reload triggered by Loading reads it
+                        isLoading = true
                     }
                 }
                 is HomeIntent.ChangeAddressZipCode -> {
                     coroutineScope.launch(Dispatchers.IO) {
-                        isLoading = true
                         executeChangeZipCode(event.zipCode)
+                        // Only after the filter is persisted, so the reload triggered by Loading reads it
+                        isLoading = true
                     }
                 }
             }

@@ -67,7 +67,8 @@ fun HomeScreen(state: HomeState) {
     when(state) {
         is HomeState.Loading -> {
             LoadingCompo()
-            state.onEvent(HomeIntent.Load)
+            // Fire once per Loading state, not on every recomposition
+            LaunchedEffect(Unit) { state.onEvent(HomeIntent.Load) }
         }
         is HomeState.Success -> {
             android.util.Log.e("Screen", "MAIN---000--------s# ${state.stations.size} ")
