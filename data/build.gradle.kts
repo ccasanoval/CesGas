@@ -29,7 +29,6 @@ android {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
     }
-    //kotlinOptions { jvmTarget = "11" }
     testOptions {
         // android.util.Log is called from production code; return defaults instead of throwing in JVM tests
         unitTests.isReturnDefaultValues = true
@@ -47,6 +46,10 @@ android {
             buildConfigField("String", "API_URL", "\"https://sedeaplicaciones.minetur.gob.es\"")
         }
     }
+}
+
+kotlin {
+    jvmToolchain(21)
 }
 
 dependencies {
@@ -69,6 +72,7 @@ dependencies {
 
     /// Retrofit
     implementation(libs.retrofit)
+    implementation(libs.okhttp)
     implementation(libs.converter.gson)
     implementation(libs.logging.interceptor)
 

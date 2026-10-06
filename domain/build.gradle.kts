@@ -1,49 +1,15 @@
 plugins {
-    alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.ksp)
-    alias(libs.plugins.hilt)
+    alias(libs.plugins.kotlin.jvm)
 }
 
-android {
-    namespace = "com.cesoft.domain"
-    compileSdk = 36
-
-    defaultConfig {
-        minSdk = 36
-
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        consumerProguardFiles("consumer-rules.pro")
-    }
-
-    buildTypes {
-        release {
-            isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-        }
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_21
-        targetCompatibility = JavaVersion.VERSION_21
-    }
-    //kotlinOptions { jvmTarget = "11" }
+kotlin {
+    jvmToolchain(21)
 }
 
 dependencies {
+    // DI: only the @Inject annotation, Hilt processes these classes in :app
+    api(libs.javax.inject)
 
-    /// Core
-    implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.appcompat)
-    implementation(libs.material)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
-
-    // DI
-    implementation(libs.hilt.android)
-    ksp(libs.hilt.android.compiler)
 }
