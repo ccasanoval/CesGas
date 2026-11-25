@@ -14,12 +14,30 @@ import com.cesoft.domain.entity.Station
 import com.cesoft.domain.repository.RepositoryContract
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.util.concurrent.ConcurrentHashMap
 
+/**
+ * Keeps in memory what was downloaded: masters (states, provinces, counties) for the whole session,
+ * as they don't change, and the stations of the last areas for [STATIONS_TTL_MS], so the map and
+ * product changes reuse the list Home already has. Failures are never cached.
+ */
 class Repository(
     private val prefs: PrefDataSource,
     //private val local: LocalDataSource,
-    private val remote: RemoteDataSource
+    private val remote: RemoteDataSource,
+    private val clock: () -> Long = System::currentTimeMillis,
 ): RepositoryContract {
+
+    @Volatile private var states: List<AddressState>? = null
+    private val provinces = ConcurrentHashMap<Int, List<AddressProvince>>()
+    private val counties = ConcurrentHashMap<Int, List<AddressCounty>>()
+
+    private class CachedStations(val time: Long, val stations: List<Station>)
+    /** Least recently used first: the oldest area is dropped when there are too many (a state can be MBs) */
+    private val stations = object : LinkedHashMap<String, CachedStations>(MAX_CACHED_AREAS, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, CachedStations>?) =
+            size > MAX_CACHED_AREAS
+    }
 
     /// PREFS
     override suspend fun getFilter(): Result<Filter> = Result.success(prefs.getFilter())
@@ -33,28 +51,47 @@ class Repository(
     /// REMOTE MASTERS
     override suspend fun getProducts(): Result<List<Product>> =
         remote.getProducts().map { list -> list.map { it.toEntity() } }
-    override suspend fun getStates(): Result<List<AddressState>> =
-        remote.getStates().map { list -> list.map { it.toEntity() } }
+    override suspend fun getStates(): Result<List<AddressState>> {
+        states?.let { return Result.success(it) }
+        return remote.getStates().map { list -> list.map { it.toEntity() } }
+            .onSuccess { states = it }
+    }
     override suspend fun getProvinces(id: Int): Result<List<AddressProvince>> =
-        remote.getProvinces(id.toApiId()).map { list -> list.map { it.toEntity() } }
+        provinces.cached(id) { remote.getProvinces(id.toApiId()).map { list -> list.map { it.toEntity() } } }
     override suspend fun getCounties(id: Int): Result<List<AddressCounty>> =
-        remote.getCounties(id).map { list -> list.map { it.toEntity() } }
+        counties.cached(id) { remote.getCounties(id).map { list -> list.map { it.toEntity() } } }
 
     /// REMOTE STATIONS
     override suspend fun getByState(id: Int): Result<List<Station>> =
-        remote.getByState(id.toApiId()).toStations()
+        cachedStations("state:$id") { remote.getByState(id.toApiId()).toStations() }
     override suspend fun getByState(id: Int, productType: ProductType): Result<List<Station>> =
         getByState(id).filterByType(productType)
 
     override suspend fun getByProvince(id: Int): Result<List<Station>> =
-        remote.getByProvince(id.toApiId()).toStations()
+        cachedStations("province:$id") { remote.getByProvince(id.toApiId()).toStations() }
     override suspend fun getByProvince(id: Int, productType: ProductType): Result<List<Station>> =
         getByProvince(id).filterByType(productType)
 
     override suspend fun getByCounty(id: Int): Result<List<Station>> =
-        remote.getByCounty(id).toStations()
+        cachedStations("county:$id") { remote.getByCounty(id).toStations() }
     override suspend fun getByCounty(id: Int, productType: ProductType): Result<List<Station>> =
         getByCounty(id).filterByType(productType)
+
+    private suspend fun <V> MutableMap<Int, V>.cached(id: Int, fetch: suspend () -> Result<V>): Result<V> {
+        get(id)?.let { return Result.success(it) }
+        return fetch().onSuccess { put(id, it) }
+    }
+
+    private suspend fun cachedStations(
+        key: String,
+        fetch: suspend () -> Result<List<Station>>
+    ): Result<List<Station>> {
+        val now = clock()
+        synchronized(stations) { stations[key] }
+            ?.takeIf { now - it.time < STATIONS_TTL_MS }
+            ?.let { return Result.success(it.stations) }
+        return fetch().onSuccess { list -> synchronized(stations) { stations[key] = CachedStations(now, list) } }
+    }
 
     /** The API wants state and province ids with two digits: "1" is not found, "01" is */
     private fun Int.toApiId() = toString().padStart(2, '0')
@@ -75,5 +112,11 @@ class Repository(
                     .sortedBy { it.prices.of(productType) }
             }
         }
+    }
+
+    companion object {
+        /** Prices are updated about every half hour */
+        const val STATIONS_TTL_MS = 10 * 60 * 1000L
+        private const val MAX_CACHED_AREAS = 4
     }
 }

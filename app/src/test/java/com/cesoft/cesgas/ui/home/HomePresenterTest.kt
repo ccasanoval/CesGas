@@ -30,6 +30,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import io.mockk.slot
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -38,8 +39,14 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import java.io.IOException
+import kotlin.system.measureTimeMillis
 
 class HomePresenterTest {
+
+    private companion object {
+        // Real time: the presenter loads on Dispatchers.IO, out of the test scheduler
+        const val REQUEST_MS = 400L
+    }
 
     private val repository = mockk<RepositoryContract>()
     private val navigator = FakeNavigator(HomeScreen)
@@ -301,6 +308,42 @@ class HomePresenterTest {
             cancelAndIgnoreRemainingEvents()
         }
         assertEquals(Filter(productType = ProductType.G95, state = 10, zipCode = "46500"), storedFilter)
+    }
+
+    @Test
+    fun `two quick filter changes are both kept`() = runTest {
+        presenter().test {
+            // Both from the same screen, before the reload of the first one starts
+            val state = awaitState<HomeState.Success>()
+            state.onEvent(HomeIntent.ChangeAddressState(options(13)))
+            state.onEvent(HomeIntent.ChangeProduct(options(ProductType.GOA.ordinal)))
+
+            awaitState<HomeState.Loading>()
+            assertEquals(Filter(productType = ProductType.GOA, state = 13), awaitState<HomeState.Success>().filter)
+            cancelAndIgnoreRemainingEvents()
+        }
+        assertEquals(Filter(productType = ProductType.GOA, state = 13), storedFilter)
+        coVerify { repository.getByState(13, ProductType.GOA) }
+    }
+
+    @Test
+    fun `the requests of a load run in parallel`() = runTest {
+        storedFilter = Filter(productType = ProductType.G95, state = 10, province = 46)
+        coEvery { repository.getStates() } coAnswers { delay(REQUEST_MS); Result.success(states) }
+        coEvery { repository.getProvinces(any()) } coAnswers { delay(REQUEST_MS); Result.success(provinces) }
+        coEvery { repository.getCounties(any()) } coAnswers { delay(REQUEST_MS); Result.success(counties) }
+        coEvery { repository.getByProvince(any(), any()) } coAnswers { delay(REQUEST_MS); Result.success(stations) }
+
+        presenter().test {
+            val elapsed = measureTimeMillis {
+                val state = awaitState<HomeState.Success>()
+                assertEquals(stations, state.stations)
+                assertEquals(counties, state.masters.counties)
+            }
+            // One after another they would take 4 * REQUEST_MS
+            assertTrue("Took $elapsed ms", elapsed < 2 * REQUEST_MS)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test

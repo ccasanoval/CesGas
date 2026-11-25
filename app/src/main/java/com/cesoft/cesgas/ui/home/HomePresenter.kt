@@ -4,7 +4,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import com.cesoft.cesgas.ui.common.FilterOptions
 import com.cesoft.cesgas.ui.map.MapScreen
@@ -28,7 +27,9 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.async
+import kotlinx.coroutines.cancelChildren
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 
 /** Everything the screen shows once loaded */
@@ -39,6 +40,9 @@ private data class HomeData(
     val favorites: Favorites = Favorites.Empty,
     val error: Throwable? = null,
 )
+
+/** A filter change waiting to be saved before the reload */
+private data class PendingSave(val filter: Filter, val favorites: Favorites)
 
 class HomePresenter @AssistedInject constructor(
     @Assisted private val navigator: Navigator,
@@ -59,26 +63,38 @@ class HomePresenter @AssistedInject constructor(
 
     @Composable
     override fun present(): HomeState {
-        val coroutineScope = rememberCoroutineScope()
         // Retained: survives configuration changes, so rotating the device doesn't call the API again
         var isLoading by rememberRetained { mutableStateOf(true) }
         var data by rememberRetained { mutableStateOf(HomeData()) }
+        // Filter change not saved yet. Retained too: if a rotation cancels the save, the reload repeats it
+        var pendingSave by rememberRetained { mutableStateOf<PendingSave?>(null) }
 
         // Setting isLoading = true is what triggers a (re)load
         if(isLoading) {
             LaunchedEffect(Unit) {
-                data = withContext(Dispatchers.IO) { fetch() }
+                var loaded: HomeData
+                do {
+                    // Save first, so the reload reads the new filter
+                    val save = pendingSave
+                    if(save != null) {
+                        setFavorites(save.favorites)
+                        setFilter(save.filter)
+                    }
+                    loaded = withContext(Dispatchers.IO) { fetch() }
+                    // Another change arrived meanwhile: save it and load again
+                    val isUpToDate = pendingSave === save
+                    if(isUpToDate) pendingSave = null
+                } while(!isUpToDate)
+                data = loaded
                 isLoading = false
             }
         }
 
-        // Persist the new filter (and the options starred in the filter dialog) first, so the reload reads them
+        // Applied to the data right away, so a change made before the reload builds on the previous one
         val changeFilter: ((Favorites) -> Favorites, (Filter) -> Filter) -> Unit = { updateFavorites, transform ->
-            coroutineScope.launch {
-                setFavorites(updateFavorites(data.favorites))
-                setFilter(transform(data.filter))
-                isLoading = true
-            }
+            data = data.copy(favorites = updateFavorites(data.favorites), filter = transform(data.filter))
+            pendingSave = PendingSave(data.filter, data.favorites)
+            isLoading = true
         }
 
         val eventSink: (HomeIntent) -> Unit = { event ->
@@ -124,32 +140,43 @@ class HomePresenter @AssistedInject constructor(
         }
     }
 
-    private suspend fun fetch(): HomeData = fetchStations().copy(
-        favorites = getFavorites().getOrNull() ?: Favorites.Empty
-    )
+    private suspend fun fetch(): HomeData = coroutineScope {
+        val favorites = async { getFavorites().getOrNull() ?: Favorites.Empty }
+        fetchStations().copy(favorites = favorites.await())
+    }
 
-    private suspend fun fetchStations(): HomeData {
+    /** The requests don't depend on each other: they all start at once, only the saved filter is read first */
+    private suspend fun fetchStations(): HomeData = coroutineScope {
         val filter = getFilter().getOrNull() ?: Filter()
-        val states = getStates().getOrElse { return HomeData(filter = filter, error = it) }
-        var masters = Masters(products = PRODUCTS, states = states, provinces = listOf(), counties = listOf())
-
         val state = filter.state
-            ?: return HomeData(filter = filter, masters = masters, error = AppError.NoStateSelected())
-        masters = masters.copy(
-            provinces = getProvinces(state).getOrNull() ?: listOf(),
-            counties = filter.province?.let { getCounties(it).getOrNull() } ?: listOf(),
-        )
-        if(filter.productType == null) {
-            return HomeData(filter = filter, masters = masters, error = AppError.NoProductSelected())
-        }
+        val province = filter.province
+        val statesRequest = async { getStates() }
+        val provincesRequest = state?.let { async { getProvinces(it) } }
+        val countiesRequest = if(state != null && province != null) async { getCounties(province) } else null
+        val stationsRequest = if(state != null && filter.productType != null) async { filterStations(filter) } else null
 
-        return filterStations(filter).fold(
-            onSuccess = { stations ->
-                val error = if(stations.isEmpty()) AppError.NotFound() else null
-                HomeData(stations = stations, filter = filter, masters = masters, error = error)
-            },
-            onFailure = { HomeData(filter = filter, masters = masters, error = it) }
+        val states = statesRequest.await().getOrElse { error ->
+            // Nothing can be shown without the states: don't wait for the rest
+            coroutineContext.cancelChildren()
+            return@coroutineScope HomeData(filter = filter, error = error)
+        }
+        val masters = Masters(
+            products = PRODUCTS,
+            states = states,
+            provinces = provincesRequest?.await()?.getOrNull() ?: listOf(),
+            counties = countiesRequest?.await()?.getOrNull() ?: listOf(),
         )
+        when {
+            stationsRequest != null -> stationsRequest.await().fold(
+                onSuccess = { stations ->
+                    val error = if(stations.isEmpty()) AppError.NotFound() else null
+                    HomeData(stations = stations, filter = filter, masters = masters, error = error)
+                },
+                onFailure = { HomeData(filter = filter, masters = masters, error = it) }
+            )
+            state == null -> HomeData(filter = filter, masters = masters, error = AppError.NoStateSelected())
+            else -> HomeData(filter = filter, masters = masters, error = AppError.NoProductSelected())
+        }
     }
 
     /**

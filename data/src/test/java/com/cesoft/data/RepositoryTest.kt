@@ -23,7 +23,8 @@ class RepositoryTest {
 
     private val prefs = mockk<PrefDataSource>(relaxed = true)
     private val remote = mockk<RemoteDataSource>()
-    private val repository = Repository(prefs, remote)
+    private var now = 0L
+    private val repository = Repository(prefs, remote, clock = { now })
 
     private fun station(id: String, g95: String = "", goa: String = "") = StationDataDto(
         zipCode = "28001", address = "", hours = "", latitude = "40,4", longitude = "-3,7",
@@ -105,5 +106,76 @@ class RepositoryTest {
 
         assertEquals(listOf(AddressState(10, "Comunitat Valenciana")), repository.getStates().getOrThrow())
         assertEquals(listOf(AddressProvince(46, "Valencia")), repository.getProvinces(10).getOrThrow())
+    }
+
+    @Test
+    fun `stations are downloaded once while fresh, whatever the product`() = runTest {
+        coEvery { remote.getByState("10") } returns Result.success(stations)
+
+        repository.getByState(10, ProductType.G95)
+        now += Repository.STATIONS_TTL_MS - 1
+        repository.getByState(10, ProductType.GOA)
+        repository.getByState(10)
+
+        coVerify(exactly = 1) { remote.getByState("10") }
+    }
+
+    @Test
+    fun `stations are downloaded again once expired`() = runTest {
+        coEvery { remote.getByProvince("46") } returns Result.success(stations)
+
+        repository.getByProvince(46, ProductType.G95)
+        now += Repository.STATIONS_TTL_MS
+        repository.getByProvince(46, ProductType.G95)
+
+        coVerify(exactly = 2) { remote.getByProvince("46") }
+    }
+
+    @Test
+    fun `each area has its own cached stations`() = runTest {
+        coEvery { remote.getByCounty(any()) } returns Result.success(stations)
+
+        repository.getByCounty(7183)
+        repository.getByCounty(7184)
+        repository.getByCounty(7183)
+
+        coVerify(exactly = 1) { remote.getByCounty(7183) }
+        coVerify(exactly = 1) { remote.getByCounty(7184) }
+    }
+
+    @Test
+    fun `failures are not cached`() = runTest {
+        coEvery { remote.getByState("10") } returnsMany listOf(
+            Result.failure(AppError.NetworkException(503, "")),
+            Result.success(stations),
+        )
+        coEvery { remote.getStates() } returnsMany listOf(
+            Result.failure(AppError.NetworkException(503, "")),
+            Result.success(listOf(StateDto(10, "Comunitat Valenciana"))),
+        )
+
+        assertTrue(repository.getByState(10).isFailure)
+        assertEquals(4, repository.getByState(10).getOrThrow().size)
+        assertTrue(repository.getStates().isFailure)
+        assertEquals(1, repository.getStates().getOrThrow().size)
+    }
+
+    @Test
+    fun `masters are downloaded once`() = runTest {
+        coEvery { remote.getStates() } returns Result.success(listOf(StateDto(10, "Comunitat Valenciana")))
+        coEvery { remote.getProvinces(any()) } returns Result.success(listOf(ProvinceDto(46, "Valencia")))
+        coEvery { remote.getCounties(any()) } returns Result.success(listOf())
+
+        repeat(2) {
+            repository.getStates()
+            repository.getProvinces(10)
+            repository.getCounties(46)
+        }
+        now += Repository.STATIONS_TTL_MS * 10
+        repository.getStates()
+
+        coVerify(exactly = 1) { remote.getStates() }
+        coVerify(exactly = 1) { remote.getProvinces("10") }
+        coVerify(exactly = 1) { remote.getCounties(46) }
     }
 }
