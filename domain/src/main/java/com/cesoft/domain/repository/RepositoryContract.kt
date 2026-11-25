@@ -16,6 +16,9 @@ interface RepositoryContract {
     suspend fun getFavorites(): Result<Favorites>
     suspend fun setFavorites(favorites: Favorites): Result<Unit>
 
+    /** Forgets the downloaded data, so the next requests get fresh prices */
+    fun clearCache()
+
     // REMOTE MASTERS
     suspend fun getProducts(): Result<List<Product>>
     suspend fun getStates(): Result<List<AddressState>>

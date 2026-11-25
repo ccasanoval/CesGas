@@ -1,5 +1,6 @@
 package com.cesoft.data
 
+import android.os.SystemClock
 import com.cesoft.data.entity.StationDto
 import com.cesoft.data.prefs.PrefDataSource
 import com.cesoft.data.remote.RemoteDataSource
@@ -19,13 +20,15 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  * Keeps in memory what was downloaded: masters (states, provinces, counties) for the whole session,
  * as they don't change, and the stations of the last areas for [STATIONS_TTL_MS], so the map and
- * product changes reuse the list Home already has. Failures are never cached.
+ * product changes reuse the list Home already has. Failures and empty answers are never cached,
+ * as an empty list may be a temporary server problem.
  */
 class Repository(
     private val prefs: PrefDataSource,
     //private val local: LocalDataSource,
     private val remote: RemoteDataSource,
-    private val clock: () -> Long = System::currentTimeMillis,
+    // Monotonic: moving the phone's clock back must not keep old prices longer
+    private val clock: () -> Long = SystemClock::elapsedRealtime,
 ): RepositoryContract {
 
     @Volatile private var states: List<AddressState>? = null
@@ -48,13 +51,21 @@ class Repository(
     override suspend fun setFavorites(favorites: Favorites): Result<Unit> =
         Result.success(prefs.setFavorites(favorites))
 
+    /// CACHE
+    override fun clearCache() {
+        states = null
+        provinces.clear()
+        counties.clear()
+        synchronized(stations) { stations.clear() }
+    }
+
     /// REMOTE MASTERS
     override suspend fun getProducts(): Result<List<Product>> =
         remote.getProducts().map { list -> list.map { it.toEntity() } }
     override suspend fun getStates(): Result<List<AddressState>> {
         states?.let { return Result.success(it) }
         return remote.getStates().map { list -> list.map { it.toEntity() } }
-            .onSuccess { states = it }
+            .onSuccess { if(it.isNotEmpty()) states = it }
     }
     override suspend fun getProvinces(id: Int): Result<List<AddressProvince>> =
         provinces.cached(id) { remote.getProvinces(id.toApiId()).map { list -> list.map { it.toEntity() } } }
@@ -77,9 +88,9 @@ class Repository(
     override suspend fun getByCounty(id: Int, productType: ProductType): Result<List<Station>> =
         getByCounty(id).filterByType(productType)
 
-    private suspend fun <V> MutableMap<Int, V>.cached(id: Int, fetch: suspend () -> Result<V>): Result<V> {
+    private suspend fun <V : Collection<*>> MutableMap<Int, V>.cached(id: Int, fetch: suspend () -> Result<V>): Result<V> {
         get(id)?.let { return Result.success(it) }
-        return fetch().onSuccess { put(id, it) }
+        return fetch().onSuccess { if(it.isNotEmpty()) put(id, it) }
     }
 
     private suspend fun cachedStations(
@@ -90,7 +101,9 @@ class Repository(
         synchronized(stations) { stations[key] }
             ?.takeIf { now - it.time < STATIONS_TTL_MS }
             ?.let { return Result.success(it.stations) }
-        return fetch().onSuccess { list -> synchronized(stations) { stations[key] = CachedStations(now, list) } }
+        return fetch().onSuccess { list ->
+            if(list.isNotEmpty()) synchronized(stations) { stations[key] = CachedStations(now, list) }
+        }
     }
 
     /** The API wants state and province ids with two digits: "1" is not found, "01" is */

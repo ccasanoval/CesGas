@@ -1,5 +1,6 @@
 package com.cesoft.data
 
+import com.cesoft.data.entity.CountyDto
 import com.cesoft.data.entity.ProvinceDto
 import com.cesoft.data.entity.StateDto
 import com.cesoft.data.entity.StationDataDto
@@ -164,7 +165,7 @@ class RepositoryTest {
     fun `masters are downloaded once`() = runTest {
         coEvery { remote.getStates() } returns Result.success(listOf(StateDto(10, "Comunitat Valenciana")))
         coEvery { remote.getProvinces(any()) } returns Result.success(listOf(ProvinceDto(46, "Valencia")))
-        coEvery { remote.getCounties(any()) } returns Result.success(listOf())
+        coEvery { remote.getCounties(any()) } returns Result.success(listOf(CountyDto(7183, "Sagunto")))
 
         repeat(2) {
             repository.getStates()
@@ -177,5 +178,44 @@ class RepositoryTest {
         coVerify(exactly = 1) { remote.getStates() }
         coVerify(exactly = 1) { remote.getProvinces("10") }
         coVerify(exactly = 1) { remote.getCounties(46) }
+    }
+
+    @Test
+    fun `empty answers are not cached`() = runTest {
+        coEvery { remote.getByState("10") } returnsMany listOf(Result.success(StationDto(null)), Result.success(stations))
+        coEvery { remote.getStates() } returnsMany listOf(
+            Result.success(listOf()),
+            Result.success(listOf(StateDto(10, "Comunitat Valenciana"))),
+        )
+        coEvery { remote.getProvinces("10") } returnsMany listOf(
+            Result.success(listOf()),
+            Result.success(listOf(ProvinceDto(46, "Valencia"))),
+        )
+
+        assertTrue(repository.getByState(10).getOrThrow().isEmpty())
+        assertEquals(4, repository.getByState(10).getOrThrow().size)
+        assertTrue(repository.getStates().getOrThrow().isEmpty())
+        assertEquals(1, repository.getStates().getOrThrow().size)
+        assertTrue(repository.getProvinces(10).getOrThrow().isEmpty())
+        assertEquals(1, repository.getProvinces(10).getOrThrow().size)
+    }
+
+    @Test
+    fun `clearing the cache downloads everything again`() = runTest {
+        coEvery { remote.getByState("10") } returns Result.success(stations)
+        coEvery { remote.getStates() } returns Result.success(listOf(StateDto(10, "Comunitat Valenciana")))
+        coEvery { remote.getCounties(46) } returns Result.success(listOf(CountyDto(7183, "Sagunto")))
+
+        repository.getByState(10)
+        repository.getStates()
+        repository.getCounties(46)
+        repository.clearCache()
+        repository.getByState(10)
+        repository.getStates()
+        repository.getCounties(46)
+
+        coVerify(exactly = 2) { remote.getByState("10") }
+        coVerify(exactly = 2) { remote.getStates() }
+        coVerify(exactly = 2) { remote.getCounties(46) }
     }
 }

@@ -34,6 +34,11 @@ class FakeRepository(
         return Result.success(Unit)
     }
 
+    var cacheCleared = false
+    override fun clearCache() {
+        cacheCleared = true
+    }
+
     override suspend fun getProducts() = Result.success(listOf<Product>())
     override suspend fun getStates() = Result.success(listOf<AddressState>())
     override suspend fun getProvinces(id: Int) = Result.success(listOf<AddressProvince>())

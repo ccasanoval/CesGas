@@ -8,6 +8,7 @@ import com.cesoft.domain.entity.Filter
 import com.cesoft.domain.entity.ProductType
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class UseCasesTest {
@@ -54,5 +55,12 @@ class UseCasesTest {
         SetFavoritesUC(repository)(favorites)
 
         assertEquals(favorites, GetFavoritesUC(repository)().getOrNull())
+    }
+
+    @Test
+    fun `ClearCacheUC clears the repository cache`() {
+        ClearCacheUC(repository)()
+
+        assertTrue(repository.cacheCleared)
     }
 }

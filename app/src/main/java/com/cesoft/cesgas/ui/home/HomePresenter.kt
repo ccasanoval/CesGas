@@ -12,6 +12,7 @@ import com.cesoft.domain.entity.Favorites
 import com.cesoft.domain.entity.Filter
 import com.cesoft.domain.entity.ProductType
 import com.cesoft.domain.entity.Station
+import com.cesoft.domain.usecase.ClearCacheUC
 import com.cesoft.domain.usecase.FilterStationsUC
 import com.cesoft.domain.usecase.GetCountiesUC
 import com.cesoft.domain.usecase.GetFavoritesUC
@@ -54,6 +55,7 @@ class HomePresenter @AssistedInject constructor(
     private val getStates: GetStatesUC,
     private val getProvinces: GetProvincesUC,
     private val getCounties: GetCountiesUC,
+    private val clearCache: ClearCacheUC,
 ) : Presenter<HomeState> {
 
     @AssistedFactory
@@ -68,6 +70,8 @@ class HomePresenter @AssistedInject constructor(
         var data by rememberRetained { mutableStateOf(HomeData()) }
         // Filter change not saved yet. Retained too: if a rotation cancels the save, the reload repeats it
         var pendingSave by rememberRetained { mutableStateOf<PendingSave?>(null) }
+        // The user asked for fresh data: the cache is skipped. Filter changes and the map keep using it
+        var isRefreshRequested by rememberRetained { mutableStateOf(false) }
 
         // Setting isLoading = true is what triggers a (re)load
         if(isLoading) {
@@ -80,9 +84,13 @@ class HomePresenter @AssistedInject constructor(
                         setFavorites(save.favorites)
                         setFilter(save.filter)
                     }
+                    if(isRefreshRequested) {
+                        isRefreshRequested = false
+                        clearCache()
+                    }
                     loaded = withContext(Dispatchers.IO) { fetch() }
-                    // Another change arrived meanwhile: save it and load again
-                    val isUpToDate = pendingSave === save
+                    // Another change or refresh arrived meanwhile: apply it and load again
+                    val isUpToDate = pendingSave === save && !isRefreshRequested
                     if(isUpToDate) pendingSave = null
                 } while(!isUpToDate)
                 data = loaded
@@ -100,7 +108,10 @@ class HomePresenter @AssistedInject constructor(
         val eventSink: (HomeIntent) -> Unit = { event ->
             when (event) {
                 is HomeIntent.Close -> navigator.pop()
-                is HomeIntent.Load -> isLoading = true
+                is HomeIntent.Load -> {
+                    isRefreshRequested = true
+                    isLoading = true
+                }
                 // The station travels in the screen: nothing to write to disk before navigating
                 is HomeIntent.GoMap -> navigator.goTo(MapScreen(event.station))
                 is HomeIntent.ChangeProduct -> changeFilter(

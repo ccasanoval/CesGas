@@ -13,6 +13,7 @@ import com.cesoft.domain.entity.Favorites
 import com.cesoft.domain.entity.Filter
 import com.cesoft.domain.entity.ProductType
 import com.cesoft.domain.repository.RepositoryContract
+import com.cesoft.domain.usecase.ClearCacheUC
 import com.cesoft.domain.usecase.FilterStationsUC
 import com.cesoft.domain.usecase.GetByCountyUC
 import com.cesoft.domain.usecase.GetByProvinceUC
@@ -28,9 +29,12 @@ import com.slack.circuit.test.FakeNavigator
 import com.slack.circuit.test.test
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.Runs
+import io.mockk.coVerifyOrder
+import io.mockk.just
 import io.mockk.mockk
 import io.mockk.slot
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -39,14 +43,9 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import java.io.IOException
-import kotlin.system.measureTimeMillis
+import java.util.concurrent.atomic.AtomicInteger
 
 class HomePresenterTest {
-
-    private companion object {
-        // Real time: the presenter loads on Dispatchers.IO, out of the test scheduler
-        const val REQUEST_MS = 400L
-    }
 
     private val repository = mockk<RepositoryContract>()
     private val navigator = FakeNavigator(HomeScreen)
@@ -79,6 +78,7 @@ class HomePresenterTest {
         coEvery { repository.getByState(any(), any()) } returns Result.success(stations)
         coEvery { repository.getByProvince(any(), any()) } returns Result.success(stations)
         coEvery { repository.getByCounty(any(), any()) } returns Result.success(stations)
+        coEvery { repository.clearCache() } just Runs
     }
 
     private fun presenter() = HomePresenter(
@@ -93,6 +93,7 @@ class HomePresenterTest {
         getStates = GetStatesUC(repository),
         getProvinces = GetProvincesUC(repository),
         getCounties = GetCountiesUC(repository),
+        clearCache = ClearCacheUC(repository),
     )
 
     private fun options(vararg selectedIds: Int) =
@@ -329,21 +330,53 @@ class HomePresenterTest {
     @Test
     fun `the requests of a load run in parallel`() = runTest {
         storedFilter = Filter(productType = ProductType.G95, state = 10, province = 46)
-        coEvery { repository.getStates() } coAnswers { delay(REQUEST_MS); Result.success(states) }
-        coEvery { repository.getProvinces(any()) } coAnswers { delay(REQUEST_MS); Result.success(provinces) }
-        coEvery { repository.getCounties(any()) } coAnswers { delay(REQUEST_MS); Result.success(counties) }
-        coEvery { repository.getByProvince(any(), any()) } coAnswers { delay(REQUEST_MS); Result.success(stations) }
+        // Each request waits until all four have started: one after another, the first one never ends
+        val started = AtomicInteger()
+        val allStarted = CompletableDeferred<Unit>()
+        suspend fun <T> whenAllStarted(result: T): T {
+            if(started.incrementAndGet() == 4) allStarted.complete(Unit)
+            allStarted.await()
+            return result
+        }
+        coEvery { repository.getStates() } coAnswers { whenAllStarted(Result.success(states)) }
+        coEvery { repository.getProvinces(any()) } coAnswers { whenAllStarted(Result.success(provinces)) }
+        coEvery { repository.getCounties(any()) } coAnswers { whenAllStarted(Result.success(counties)) }
+        coEvery { repository.getByProvince(any(), any()) } coAnswers { whenAllStarted(Result.success(stations)) }
 
         presenter().test {
-            val elapsed = measureTimeMillis {
-                val state = awaitState<HomeState.Success>()
-                assertEquals(stations, state.stations)
-                assertEquals(counties, state.masters.counties)
-            }
-            // One after another they would take 4 * REQUEST_MS
-            assertTrue("Took $elapsed ms", elapsed < 2 * REQUEST_MS)
+            val state = awaitState<HomeState.Success>()
+            assertEquals(stations, state.stations)
+            assertEquals(counties, state.masters.counties)
             cancelAndIgnoreRemainingEvents()
         }
+    }
+
+    @Test
+    fun `refresh discards the cache before loading again`() = runTest {
+        presenter().test {
+            awaitState<HomeState.Success>().onEvent(HomeIntent.Load)
+
+            awaitState<HomeState.Loading>()
+            awaitState<HomeState.Success>()
+            cancelAndIgnoreRemainingEvents()
+        }
+        coVerifyOrder {
+            repository.getByState(10, ProductType.G95)
+            repository.clearCache()
+            repository.getByState(10, ProductType.G95)
+        }
+    }
+
+    @Test
+    fun `changing the filter keeps the cache`() = runTest {
+        presenter().test {
+            awaitState<HomeState.Success>().onEvent(HomeIntent.ChangeProduct(options(ProductType.GOA.ordinal)))
+
+            awaitState<HomeState.Loading>()
+            awaitState<HomeState.Success>()
+            cancelAndIgnoreRemainingEvents()
+        }
+        coVerify(exactly = 0) { repository.clearCache() }
     }
 
     @Test
