@@ -48,15 +48,6 @@ class UseCasesTest {
     }
 
     @Test
-    fun `SetCurrentStationUC and GetCurrentStationUC round trip`() = runTest {
-        val station = station(42)
-
-        SetCurrentStationUC(repository)(station)
-
-        assertEquals(station, GetCurrentStationUC(repository)().getOrNull())
-    }
-
-    @Test
     fun `SetFavoritesUC and GetFavoritesUC round trip`() = runTest {
         val favorites = Favorites(products = setOf(ProductType.GOA), states = setOf(10, 13), counties = setOf(7183))
 

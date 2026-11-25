@@ -14,11 +14,13 @@ import com.cesoft.cesgas.ui.common.LoadingCompo
 import com.cesoft.cesgas.ui.message
 import com.cesoft.cesgas.ui.common.MapCompo
 import com.cesoft.cesgas.ui.common.rememberMapCompo
+import com.cesoft.domain.entity.Station
 import com.slack.circuit.runtime.screen.Screen
 import kotlinx.parcelize.Parcelize
 
+/** [station] is the one selected in the list; without it the map shows the stations of the filter */
 @Parcelize
-data object MapScreen : Screen
+data class MapScreen(val station: Station? = null) : Screen
 
 @Composable
 fun MapScreen(state: MapState) {

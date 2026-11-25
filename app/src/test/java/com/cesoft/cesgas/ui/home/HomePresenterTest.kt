@@ -12,7 +12,6 @@ import com.cesoft.domain.entity.AddressState
 import com.cesoft.domain.entity.Favorites
 import com.cesoft.domain.entity.Filter
 import com.cesoft.domain.entity.ProductType
-import com.cesoft.domain.entity.Station
 import com.cesoft.domain.repository.RepositoryContract
 import com.cesoft.domain.usecase.FilterStationsUC
 import com.cesoft.domain.usecase.GetByCountyUC
@@ -23,7 +22,6 @@ import com.cesoft.domain.usecase.GetFavoritesUC
 import com.cesoft.domain.usecase.GetFilterUC
 import com.cesoft.domain.usecase.GetProvincesUC
 import com.cesoft.domain.usecase.GetStatesUC
-import com.cesoft.domain.usecase.SetCurrentStationUC
 import com.cesoft.domain.usecase.SetFavoritesUC
 import com.cesoft.domain.usecase.SetFilterUC
 import com.slack.circuit.test.FakeNavigator
@@ -68,7 +66,6 @@ class HomePresenterTest {
             storedFavorites = favoritesSlot.captured
             Result.success(Unit)
         }
-        coEvery { repository.setCurrentStation(any()) } returns Result.success(Unit)
         coEvery { repository.getStates() } returns Result.success(states)
         coEvery { repository.getProvinces(any()) } returns Result.success(provinces)
         coEvery { repository.getCounties(any()) } returns Result.success(counties)
@@ -86,7 +83,6 @@ class HomePresenterTest {
         filterStations = FilterStationsUC(
             GetByStateUC(repository), GetByProvinceUC(repository), GetByCountyUC(repository)
         ),
-        setCurrentStation = SetCurrentStationUC(repository),
         getStates = GetStatesUC(repository),
         getProvinces = GetProvincesUC(repository),
         getCounties = GetCountiesUC(repository),
@@ -320,24 +316,24 @@ class HomePresenterTest {
     }
 
     @Test
-    fun `going to a station saves it and opens the map`() = runTest {
+    fun `going to a station opens the map with it, without saving anything`() = runTest {
         presenter().test {
             awaitState<HomeState.Success>().onEvent(HomeIntent.GoMap(stations[1]))
 
-            assertEquals(MapScreen, navigator.awaitNextScreen())
+            assertEquals(MapScreen(stations[1]), navigator.awaitNextScreen())
             cancelAndIgnoreRemainingEvents()
         }
-        coVerify { repository.setCurrentStation(stations[1]) }
+        coVerify(exactly = 0) { repository.setFilter(any()) }
+        coVerify(exactly = 0) { repository.setFavorites(any()) }
     }
 
     @Test
-    fun `going to the map without station clears the current one`() = runTest {
+    fun `going to the map without station opens it for the filter`() = runTest {
         presenter().test {
             awaitState<HomeState.Success>().onEvent(HomeIntent.GoMap())
 
-            assertEquals(MapScreen, navigator.awaitNextScreen())
+            assertEquals(MapScreen(station = null), navigator.awaitNextScreen())
             cancelAndIgnoreRemainingEvents()
         }
-        coVerify { repository.setCurrentStation(Station.Empty) }
     }
 }

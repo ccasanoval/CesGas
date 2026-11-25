@@ -2,6 +2,7 @@ package com.cesoft.data
 
 import android.content.Context
 import com.cesoft.data.prefs.PrefDataSource
+import com.cesoft.data.prefs.prefDataStore
 import com.cesoft.data.remote.RemoteDataSource
 import com.cesoft.domain.repository.RepositoryContract
 import dagger.Module
@@ -21,7 +22,7 @@ object DataModule {
     fun providePrefDataSource(
         @ApplicationContext appContext: Context
     ): PrefDataSource {
-        return PrefDataSource(appContext)
+        return PrefDataSource(appContext.prefDataStore)
     }
 
     @Singleton

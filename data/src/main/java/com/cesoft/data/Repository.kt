@@ -30,11 +30,6 @@ class Repository(
     override suspend fun setFavorites(favorites: Favorites): Result<Unit> =
         Result.success(prefs.setFavorites(favorites))
 
-    /// CURRENT STATION
-    override suspend fun getCurrentStation(): Result<Station> = Result.success(prefs.getCurrentStation())
-    override suspend fun setCurrentStation(station: Station): Result<Unit> =
-        Result.success(prefs.setCurrentStation(station))
-
     /// REMOTE MASTERS
     override suspend fun getProducts(): Result<List<Product>> =
         remote.getProducts().map { list -> list.map { it.toEntity() } }

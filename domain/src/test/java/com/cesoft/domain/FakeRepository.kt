@@ -20,7 +20,6 @@ class FakeRepository(
     val calls = mutableListOf<Call>()
 
     var filter = Filter.Empty
-    var currentStation = Station.Empty
 
     override suspend fun getFilter() = Result.success(filter)
     override suspend fun setFilter(filter: Filter): Result<Unit> {
@@ -32,12 +31,6 @@ class FakeRepository(
     override suspend fun getFavorites() = Result.success(favorites)
     override suspend fun setFavorites(favorites: Favorites): Result<Unit> {
         this.favorites = favorites
-        return Result.success(Unit)
-    }
-
-    override suspend fun getCurrentStation() = Result.success(currentStation)
-    override suspend fun setCurrentStation(station: Station): Result<Unit> {
-        currentStation = station
         return Result.success(Unit)
     }
 

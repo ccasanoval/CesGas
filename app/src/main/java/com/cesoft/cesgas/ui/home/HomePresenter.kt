@@ -19,7 +19,6 @@ import com.cesoft.domain.usecase.GetFavoritesUC
 import com.cesoft.domain.usecase.GetFilterUC
 import com.cesoft.domain.usecase.GetProvincesUC
 import com.cesoft.domain.usecase.GetStatesUC
-import com.cesoft.domain.usecase.SetCurrentStationUC
 import com.cesoft.domain.usecase.SetFavoritesUC
 import com.cesoft.domain.usecase.SetFilterUC
 import com.slack.circuit.retained.rememberRetained
@@ -48,7 +47,6 @@ class HomePresenter @AssistedInject constructor(
     private val getFavorites: GetFavoritesUC,
     private val setFavorites: SetFavoritesUC,
     private val filterStations: FilterStationsUC,
-    private val setCurrentStation: SetCurrentStationUC,
     private val getStates: GetStatesUC,
     private val getProvinces: GetProvincesUC,
     private val getCounties: GetCountiesUC,
@@ -87,10 +85,8 @@ class HomePresenter @AssistedInject constructor(
             when (event) {
                 is HomeIntent.Close -> navigator.pop()
                 is HomeIntent.Load -> isLoading = true
-                is HomeIntent.GoMap -> coroutineScope.launch {
-                    setCurrentStation(event.station ?: Station.Empty)
-                    navigator.goTo(MapScreen)
-                }
+                // The station travels in the screen: nothing to write to disk before navigating
+                is HomeIntent.GoMap -> navigator.goTo(MapScreen(event.station))
                 is HomeIntent.ChangeProduct -> changeFilter(
                     { it.copy(products = it.products.updatedWith(event.filters) { id -> ProductType.entries.getOrNull(id) }) },
                     { it.copy(productType = event.filters.getSelectedProductType()) }

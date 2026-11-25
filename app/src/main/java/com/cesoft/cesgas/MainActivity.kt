@@ -40,7 +40,7 @@ class MainActivity : ComponentActivity() {
                 when (screen) {
                     // A new presenter per screen; its state lives in rememberRetained, not in the instance
                     is HomeScreen -> homePresenterFactory.create(navigator)
-                    is MapScreen -> mapPresenterFactory.create(navigator)
+                    is MapScreen -> mapPresenterFactory.create(screen, navigator)
                     else -> null
                 }
             }

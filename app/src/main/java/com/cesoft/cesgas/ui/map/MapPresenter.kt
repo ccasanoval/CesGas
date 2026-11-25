@@ -9,7 +9,6 @@ import com.cesoft.domain.AppError
 import com.cesoft.domain.entity.Filter
 import com.cesoft.domain.entity.Station
 import com.cesoft.domain.usecase.FilterStationsUC
-import com.cesoft.domain.usecase.GetCurrentStationUC
 import com.cesoft.domain.usecase.GetFilterUC
 import com.slack.circuit.retained.rememberRetained
 import com.slack.circuit.runtime.Navigator
@@ -28,15 +27,15 @@ private data class MapData(
 )
 
 class MapPresenter @AssistedInject constructor(
+    @Assisted private val screen: MapScreen,
     @Assisted private val navigator: Navigator,
-    private val getCurrentStation: GetCurrentStationUC,
     private val getFilter: GetFilterUC,
     private val filterStations: FilterStationsUC,
 ) : Presenter<MapState> {
 
     @AssistedFactory
     interface Factory {
-        fun create(navigator: Navigator): MapPresenter
+        fun create(screen: MapScreen, navigator: Navigator): MapPresenter
     }
 
     @Composable
@@ -75,7 +74,7 @@ class MapPresenter @AssistedInject constructor(
     /** The station selected in the list, or every station matching the filter if there is none */
     private suspend fun load(): MapData {
         val filter = getFilter().getOrNull() ?: Filter()
-        val current = getCurrentStation().getOrNull()
+        val current = screen.station
         // A station without location can't be shown, so it counts as "no station selected"
         if(current != null && (current.location.latitude != 0.0 || current.location.longitude != 0.0)) {
             return MapData(stations = listOf(current), filter = filter)

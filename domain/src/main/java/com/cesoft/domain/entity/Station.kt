@@ -1,5 +1,7 @@
 package com.cesoft.domain.entity
 
+import java.io.Serializable
+
 data class Station(
     val id: Int,
     val zipCode: String,
@@ -16,7 +18,7 @@ data class Station(
 //    val idCity: String,
 //    val idProvince: String,
 //    val idState: String,
-) {
+): Serializable {
     companion object {
         val Empty = Station(0, "", "", "", "", "",
             Location(0.0, 0.0), "", "", Prices.Empty)

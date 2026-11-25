@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Place
@@ -259,16 +260,16 @@ private fun StationList(
     reduce: (HomeIntent) -> Unit
 ) {
     HorizontalDivider(Modifier.padding(vertical = SepMin))
+    // A state can have thousands of stations: one items() block instead of an item() per station.
+    // No key: stations without IDEESS all get id 0, and repeated keys crash the LazyColumn
     LazyColumn {
-        for (station in state.stations) {
-            item {
-                Item(
-                    modifier = Modifier.padding(horizontal = SepMed, vertical = SepMin),
-                    product = state.filter.productType,//TODO: Do filter prices to show in Presenter
-                    station = station,
-                    reduce = reduce
-                )
-            }
+        items(state.stations) { station ->
+            Item(
+                modifier = Modifier.padding(horizontal = SepMed, vertical = SepMin),
+                product = state.filter.productType,//TODO: Do filter prices to show in Presenter
+                station = station,
+                reduce = reduce
+            )
         }
     }
 }

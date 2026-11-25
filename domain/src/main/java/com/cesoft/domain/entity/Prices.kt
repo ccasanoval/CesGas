@@ -1,5 +1,7 @@
 package com.cesoft.domain.entity
 
+import java.io.Serializable
+
 data class Prices(
     val G95: Float?,
     val G98: Float?,
@@ -8,7 +10,7 @@ data class Prices(
     val GOC: Float?,
     val GOAP: Float?,
     val GLP: Float?,
-) {
+): Serializable {
     /** Price of the given product, or null if not sold or the type is not a single product (ALL, UNKNOWN) */
     fun of(productType: ProductType?): Float? = when(productType) {
         ProductType.G95 -> G95

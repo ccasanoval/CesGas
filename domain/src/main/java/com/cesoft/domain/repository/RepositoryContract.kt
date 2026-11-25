@@ -9,17 +9,12 @@ import com.cesoft.domain.entity.Product
 import com.cesoft.domain.entity.ProductType
 import com.cesoft.domain.entity.Station
 
-
 interface RepositoryContract {
     // PREFS
     suspend fun getFilter(): Result<Filter>
     suspend fun setFilter(filter: Filter): Result<Unit>
     suspend fun getFavorites(): Result<Favorites>
     suspend fun setFavorites(favorites: Favorites): Result<Unit>
-
-    // CURRENT STATION
-    suspend fun getCurrentStation(): Result<Station>
-    suspend fun setCurrentStation(station: Station): Result<Unit>
 
     // REMOTE MASTERS
     suspend fun getProducts(): Result<List<Product>>
